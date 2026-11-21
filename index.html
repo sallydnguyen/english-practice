@@ -99,7 +99,7 @@ p { margin: 0; }
 .muted { color: var(--muted); }
 .small { font-size: .875rem; }
 .center { text-align: center; }
-.label { font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.label { font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); line-height: 1.4; word-break: normal; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
 .note { background: var(--sunk); border-radius: 12px; padding: 12px; font-size: .88rem; color: var(--muted); }
 button, select {
@@ -209,6 +209,7 @@ select { width: 100%; }
 .grades .kbd { min-width: 20px; height: 20px; font-size: .7rem; margin-bottom: 2px; }
 .keyhint { text-align: center; font-size: .75rem; color: var(--muted); }
 @media (hover: none) { .keyhint { display: none; } }
+@media (max-width: 380px) { .label { font-size: .7rem; letter-spacing: .03em; } }
 
 /* Phân loại chủ đề */
 .cat-bar { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 8px; margin-top: 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
@@ -327,6 +328,7 @@ select { width: 100%; }
 .q { font-size: 1.15rem; font-weight: 600; white-space: pre-line; }
 .options { display: grid; gap: 10px; }
 .options button { justify-content: flex-start; text-align: left; }
+.options button .grow { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; word-break: break-word; }
 .options button[aria-pressed="true"] { border: 2px solid var(--teal); background: var(--sunk); }
 .options button.right { background: var(--good-bg); border: 2px solid var(--good); }
 .options button.wrong { background: var(--bad-bg); border: 2px solid var(--bad); }
@@ -1159,7 +1161,7 @@ details.acc-group > .acc-body { background: var(--bg); padding: 10px 12px; gap: 
    Dữ liệu bài học nằm trong data/en.json và data/ielts_30day_listening.js,
    âm thanh thu sẵn nằm trong audio/ (audio/w*.json, audio/mail/, audio/listen/, audio/ielts/).
    ===================================================================== */
-const APP_BUILD_ID = '20261119-0125';
+const APP_BUILD_ID = '20261121-1510';
 const LANGS = {
   en: { label: 'English', vi: 'Tiếng Anh', short: 'Anh', folder: '', tts: 'en-US', rec: 'en-US', lang: 'en', cjk: false },
 };
@@ -4224,7 +4226,7 @@ function homeView() {
       });
       return wrap;
     })(),
-    h('p', { class: 'small muted center', style: { margin: '24px 0 12px 0', fontSize: '.76rem', opacity: .65 } }, 'English Practice v3.99 · Cập nhật 18/11/2026')));
+    h('p', { class: 'small muted center', style: { margin: '24px 0 12px 0', fontSize: '.76rem', opacity: .65 } }, 'English Practice v4.00 · Cập nhật 18/11/2026')));
 }
 
 // ===== HỆ THỐNG LUYỆN THI IELTS 4 KỸ NĂNG (TIẾNG ANH) =====
@@ -11513,7 +11515,8 @@ function lessonView(t, i, opts = null) {
         origAfter();
         c.buttons.forEach((b, j) => {
           if (opts[j].r) {
-            b.appendChild(h('span', { class: 'small read', style: { display: 'block', color: 'var(--teal)', fontWeight: 600, fontSize: '.92rem', marginTop: '3px', textAlign: 'left' } }, opts[j].r));
+            const grow = b.querySelector('.grow') || b;
+            grow.appendChild(h('span', { class: 'small read', style: { display: 'block', color: 'var(--teal)', fontWeight: 600, fontSize: '.92rem', marginTop: '3px', textAlign: 'left' } }, opts[j].r));
           }
         });
       };
