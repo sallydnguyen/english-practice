@@ -327,7 +327,7 @@ def main() -> None:
     )
     html = replace_exact(
         html,
-        "        h('span', { class: 'small muted', style: { fontWeight: 600 } }, isSunday ? '🧘 Nghỉ bài mới · Ôn nhẹ 3 tiếng' : ('🎯 Trọng tâm: ' + LANGS[sch.focus].label))",
+        "        h('span', { class: 'small muted', style: { fontWeight: 600 } }, isSunday ? '🧘 Nghỉ bài mới · Ôn nhẹ ngôn ngữ' : ('🎯 Trọng tâm: ' + LANGS[sch.focus].label))",
         "        h('span', { class: 'small muted', style: { fontWeight: 600 } }, isSunday ? '🧘 Nghỉ bài mới · Tổng ôn nhẹ' : ('🎯 Trọng tâm: ' + ((LANGS[sch.focus] && LANGS[sch.focus].label) || 'English')))",
         label="renderProgressTabContent header",
     )
