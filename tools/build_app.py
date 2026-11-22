@@ -150,6 +150,7 @@ def main() -> None:
         label="fillReveal mailSrc",
     )
     html = html.replace("'English/audio/ielts/", "'audio/ielts/")
+    html = html.replace("'English/audio/ielts_30day/", "'audio/ielts_30day/")
 
     # 5. State normalization & Gist sync keys
     html = replace_exact(

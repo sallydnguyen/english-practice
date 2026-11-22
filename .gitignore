@@ -8,6 +8,7 @@ index-inline.html
 !audio/mail/*.mp3
 !audio/listen/*.mp3
 !audio/ielts/*.mp3
+!audio/ielts_30day/*.mp3
 *.wav
 *.m4a
 source/audio-nghe-N5/
