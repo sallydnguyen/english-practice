@@ -1222,7 +1222,7 @@ details.acc-group > .acc-body { background: var(--bg); padding: 10px 12px; gap: 
    Dữ liệu bài học nằm trong data/en.json và data/ielts_30day_listening.js,
    âm thanh thu sẵn nằm trong audio/ (audio/w*.json, audio/mail/, audio/listen/, audio/ielts/).
    ===================================================================== */
-const APP_BUILD_ID = '20261121-2337';
+const APP_BUILD_ID = '20261122-0136';
 const LANGS = {
   en: { label: 'English', vi: 'Tiếng Anh', short: 'Anh', folder: '', tts: 'en-US', rec: 'en-US', lang: 'en', cjk: false },
 };
@@ -3033,8 +3033,8 @@ function speakHeadline(code, text, raw, readingLine) {
   const hideRuby = code === 'ja' && !!(readingLine && readingLine !== txt);
   return (raw && !hideRuby) ? ruby(raw) : txt;
 }
-const app = document.getElementById('app');
-function mount(...nodes) { app.replaceChildren(...nodes.flat(9).filter((n) => n != null && n !== false)); window.scrollTo(0, 0); }
+const appRoot = document.getElementById('app');
+function mount(...nodes) { appRoot.replaceChildren(...nodes.flat(9).filter((n) => n != null && n !== false)); window.scrollTo(0, 0); }
 let tt;
 function toast(m) { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 2600); }
 const ICON = {
