@@ -55,14 +55,14 @@ def main() -> None:
     )
     html = replace_exact(
         html,
-        '<script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5.0/dist/hanzi-writer.min.js"></script>\n',
+        '<script async src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5.0/dist/hanzi-writer.min.js"></script>\n',
         "",
         label="hanzi-writer script",
     )
     html = replace_exact(
         html,
-        '<script src="English/data/ielts_30day_listening.js"></script>',
-        '<script src="data/ielts_30day_listening.js"></script>',
+        '<script async src="English/data/ielts_30day_listening.js"></script>',
+        '<script async src="data/ielts_30day_listening.js"></script>',
         label="ielts listening data script",
     )
 

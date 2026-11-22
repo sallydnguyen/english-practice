@@ -27,6 +27,14 @@
     var onChange = function () { if (document.documentElement.dataset.themePref === 'auto') applyTheme(); };
     if (mq.addEventListener) mq.addEventListener('change', onChange); else if (mq.addListener) mq.addListener(onChange);
   }
+  window.onerror = function (msg, src, line, col) {
+    var el = document.getElementById('app');
+    if (el && el.textContent && el.textContent.indexOf('Đang tải') !== -1) {
+      el.innerHTML = '<div style="padding:20px;font-family:sans-serif;color:#b03d2b"><b>Không thể khởi động trên trình duyệt này:</b><br>' +
+        String(msg) + '<br><small>Vị trí: ' + (line || '?') + ':' + (col || '?') + '</small><br><br>' +
+        '<small style="color:#555">' + navigator.userAgent + '</small></div>';
+    }
+  };
 })();
 </script>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -1175,7 +1183,7 @@ details.acc-group > .acc-body { background: var(--bg); padding: 10px 12px; gap: 
 <div id="app"><p class="loading">Đang tải…</p></div>
 <nav class="tabs" id="tabs" aria-label="Điều hướng" hidden></nav>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script src="data/ielts_30day_listening.js"></script>
+<script async src="data/ielts_30day_listening.js"></script>
 <script>
 'use strict';
 // Polyfills tương thích iOS Safari cũ (iOS 12–13)
@@ -1214,7 +1222,7 @@ details.acc-group > .acc-body { background: var(--bg); padding: 10px 12px; gap: 
    Dữ liệu bài học nằm trong data/en.json và data/ielts_30day_listening.js,
    âm thanh thu sẵn nằm trong audio/ (audio/w*.json, audio/mail/, audio/listen/, audio/ielts/).
    ===================================================================== */
-const APP_BUILD_ID = '20261121-2218';
+const APP_BUILD_ID = '20261121-2337';
 const LANGS = {
   en: { label: 'English', vi: 'Tiếng Anh', short: 'Anh', folder: '', tts: 'en-US', rec: 'en-US', lang: 'en', cjk: false },
 };
