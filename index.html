@@ -1261,7 +1261,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/en.json và data/ielts_30day_listening.js,
    âm thanh thu sẵn nằm trong audio/ (audio/w*.json, audio/mail/, audio/listen/, audio/ielts/).
    ===================================================================== */
-const APP_BUILD_ID = '20261122-2209';
+const APP_BUILD_ID = '20261123-0943';
 const LANGS = {
   en: { label: 'English', vi: 'Tiếng Anh', short: 'Anh', folder: '', tts: 'en-US', rec: 'en-US', lang: 'en', cjk: false },
 };
@@ -1790,16 +1790,50 @@ function addXp(n, code = S.lang) {
 }
 const XP_ITEM = 5; // mỗi từ (hoặc kanji, câu, tình huống) làm đúng = 5 XP
 
-// ===== Ôn tập ngắt quãng: hộp 0–6, khoảng ôn 1, 1, 3, 7, 14, 30, 60 ngày (giữ như app cũ) =====
+// ===== Ôn tập ngắt quãng FSRS (Free Spaced Repetition Scheduler: Stability st + Difficulty d + Box b 0–6) =====
 const IV = [1, 1, 3, 7, 14, 30, 60];
 const sid = (lang, id) => lang + ':' + id;
 function srsNext(s, g) { // g: 1 Quên, 2 Khó, 3 Nhớ, 4 Dễ
-  const t = todayN(); const b0 = s ? s.b : 0;
-  const b = g === 1 ? 0 : g === 2 ? Math.max(1, b0) : g === 3 ? Math.min(6, b0 + 1) : Math.min(6, b0 + 2);
-  return { b, due: t + IV[b], last: t };
+  const t = todayN();
+  const b0 = (s && typeof s.b === 'number') ? s.b : 0;
+  let st0 = (s && typeof s.st === 'number' && s.st > 0) ? s.st : (b0 > 0 ? IV[Math.min(6, b0)] : 0);
+  let d0 = (s && typeof s.d === 'number' && s.d >= 1 && s.d <= 10) ? s.d : 5.0;
+  let reps = (s && typeof s.reps === 'number') ? s.reps : b0;
+  let lapses = (s && typeof s.lapses === 'number') ? s.lapses : 0;
+  const elapsed = (s && typeof s.last === 'number' && t > s.last) ? (t - s.last) : Math.max(1, st0 || 1);
+
+  // Cập nhật độ khó D (1.0 dễ nhất -> 10.0 khó nhất)
+  let d = d0 - 0.75 * (g - 3);
+  d = 0.85 * d + 0.15 * 5.0;
+  d = Math.max(1.0, Math.min(10.0, Math.round(d * 100) / 100));
+
+  let st = 1;
+  let iv = 1;
+  if (!st0 || reps === 0) {
+    // Thẻ mới học lần đầu theo FSRS
+    st = g === 1 ? 0.6 : (g === 2 ? 1.5 : (g === 3 ? 3.2 : 7.0));
+    iv = g === 1 ? 1 : Math.max(1, Math.round(st));
+  } else if (g === 1) {
+    // Quên (Again): giảm độ ổn định S, hẹn ôn lại sau 1 ngày
+    lapses += 1;
+    st = Math.max(0.6, Math.min(st0 * 0.35, 2.0));
+    iv = 1;
+  } else {
+    // Nhớ được (Hard / Good / Easy): tính Retrievability R và hệ số tăng trưởng S
+    const r = Math.pow(1 + elapsed / (9 * st0), -1);
+    const hardFactor = g === 2 ? 0.45 : (g === 4 ? 1.45 : 1.0);
+    const growth = 1 + (11 - d) * 0.22 * Math.pow(st0, -0.18) * (Math.exp((1 - r) * 0.9) - 0.15) * hardFactor;
+    st = Math.max(st0 + (g === 2 ? 0.5 : 1), Math.min(365, st0 * Math.max(1.15, growth)));
+    iv = Math.max(1, Math.round(st));
+    if (g === 3 && iv <= st0) iv = Math.round(st0) + 1;
+    if (g === 4 && iv <= st0) iv = Math.round(st0) + 2;
+  }
+  st = Math.round(st * 100) / 100;
+  const b = g === 1 ? 0 : (iv >= 60 ? 6 : (iv >= 25 ? 5 : (iv >= 12 ? 4 : (iv >= 6 ? 3 : (iv >= 3 ? 2 : 1)))));
+  return { b: b, due: t + iv, last: t, st: st, d: d, reps: g === 1 ? reps : reps + 1, lapses: lapses };
 }
 function srsRate(key, ok) { if (S.del && S.del[key]) delete S.del[key]; S.srs[key] = srsNext(S.srs[key], ok ? 3 : 1); save(); }
-const ivText = (s) => { const n = s.due - todayN(); return n <= 1 ? 'ngày mai' : n < 30 ? n + ' ngày' : Math.round(n / 30) + ' tháng'; };
+const ivText = (s) => { const n = s.due - todayN(); return n <= 1 ? '1 ngày' : n < 30 ? n + ' ngày' : (n < 365 ? Math.round(n / 30 * 10) / 10 + ' tháng' : '1 năm'); };
 
 // ===== Tải dữ liệu =====
 const DATA = {}, STROKES = {}, BUNDLES = {}, BUNDLE_CACHE = Object.create(null);
@@ -4939,21 +4973,29 @@ function homeView() {
           h('div', { style: { fontSize: '.88rem', fontWeight: 700, color: allDone ? 'var(--good)' : 'var(--amber)' } },
             isJa
               ? (allDone ? '🏆 Đã vượt cấp JLPT ' : '🚀 Đề thi vượt cấp JLPT ') + lvLabel + ' (' + catDoneTopics + '/' + filteredTopics.length + ' chủ đề)'
-              : '🚀 Kiểm tra vượt cấp ' + lvLabel + ' (' + catDoneTopics + '/' + filteredTopics.length + ' chủ đề)'
+              : (S.lang === 'zh'
+                ? (allDone ? '🏆 Đã vượt cấp ' : '🚀 Đề thi vượt cấp ') + lvLabel + ' (' + catDoneTopics + '/' + filteredTopics.length + ' chủ đề)'
+                : '🚀 Kiểm tra vượt cấp ' + lvLabel + ' (' + catDoneTopics + '/' + filteredTopics.length + ' chủ đề)')
           ),
           h('div', { class: 'small muted', style: { fontSize: '.76rem', marginTop: '2px' } },
             isJa
               ? (allDone
                 ? 'Bạn đã hoàn thành 100% chuyên đề ' + lvLabel + '. Có thể làm lại đề thi chuẩn JLPT ' + lvLabel + ' bất cứ lúc nào.'
                 : 'Làm đề thi chuẩn JLPT ' + lvLabel + ' độc lập (Kanji · Từ vựng · Ngữ pháp ★ · Đọc hiểu · Nghe hiểu). Đạt ≥ 80% để hoàn thành 100% cả chuyên đề!')
-              : 'Làm bài tổng hợp đạt ≥ 80% để pass & hoàn thành 100% cả chuyên đề ' + curCatObj.name
+              : (S.lang === 'zh'
+                ? (allDone
+                  ? 'Bạn đã hoàn thành 100% chuyên đề ' + lvLabel + '. Có thể làm lại đề thi xáo trộn chuẩn ' + lvLabel + ' bất cứ lúc nào.'
+                  : 'Làm đề thi chuẩn ' + lvLabel + ' bám sát bài học (Nghe hiểu 听力 · Từ vựng 词汇 · Ngữ pháp 语法 · Đọc hiểu 阅读). Đạt ≥ 80% để hoàn thành 100% cả chuyên đề!')
+                : 'Làm bài tổng hợp đạt ≥ 80% để pass & hoàn thành 100% cả chuyên đề ' + curCatObj.name)
           )
         ),
         h('button', {
           class: (allDone ? 'primary' : 'accent') + ' mini',
           style: { whiteSpace: 'nowrap', padding: '7px 12px', fontSize: '.82rem', fontWeight: 700, flexShrink: 0 },
           onclick: () => startCategoryExam(S.lang, curCatObj, filteredTopics)
-        }, isJa ? (allDone ? 'Làm lại đề JLPT ' + lvLabel : 'Thi vượt cấp JLPT ' + lvLabel + ' →') : 'Thi vượt cấp →')
+        }, isJa
+          ? (allDone ? 'Làm lại đề JLPT ' + lvLabel : 'Thi vượt cấp JLPT ' + lvLabel + ' →')
+          : (S.lang === 'zh' ? (allDone ? 'Làm lại đề ' + lvLabel : 'Thi vượt cấp ' + lvLabel + ' →') : 'Thi vượt cấp →'))
       );
     })(),
     (() => {
@@ -12215,6 +12257,12 @@ function startCategoryExam(code, catObj, topics) {
     const lv = String((catObj && (catObj.level || catObj.short)) || 'N5').toUpperCase();
     return startJlptLevelExam(lv, { catObj, topics, returnView: 'home' });
   }
+  if (code === 'zh') {
+    const raw = String((catObj && (catObj.id || catObj.level || catObj.short)) || 'hsk1');
+    const m = raw.match(/(\d+)/);
+    const lvNum = m ? Number(m[1]) : 1;
+    return startHskLevelExam(lvNum, { catObj, topics, returnView: 'home' });
+  }
   const steps = buildCategoryExamSteps(code, topics);
   const synthTopic = {
     id: 'cat-' + catObj.id,
@@ -12992,13 +13040,15 @@ function lessonView(t, i, opts = null) {
     t.lessons[i].kind !== 'learn' && h('p', { class: 'muted' }, ({ review: (t.lang === 'en' && Array.isArray(t.listening) && t.listening.length) ? 'Ôn lại những từ còn yếu của cả chủ đề, nghe hội thoại dài chọn đáp án và tình huống thực tế.' : 'Ôn lại những từ còn yếu của cả chủ đề, nghe chọn từ, kanji và tình huống.', quiz: 'Chọn cách nói đúng trong các tình huống thực tế.', fill: t.lang === 'en' ? 'Phần 1 chọn từ, Phần 2 tự điền lại vào email, rồi sắp xếp câu ví dụ.' : 'Phần 1 chọn từ, Phần 2 tự điền lại vào đoạn hội thoại, rồi sắp xếp câu ví dụ.', speak: 'Nghe và nói lại các câu trong chủ đề.', kanji: 'Học kanji mới: nghĩa Hán Việt, cách đọc, rồi tập viết từng chữ.' })[t.lessons[i].kind])));
 }
 
-// ===== Ôn tập theo phương pháp Spaced Repetition (Lặp lại ngắt quãng) =====
+// ===== Ôn tập theo phương pháp Spaced Repetition (FSRS + Lật thẻ 2 mặt / Trắc nghiệm) =====
 let REVIEW_SKILL = 'vocab'; // Ôn tập ngắt quãng chỉ ôn từ mới theo yêu cầu
+let REVIEW_MODE = 'flip'; // 'flip' (Lật thẻ Flashcard 2 mặt + 4 mức FSRS) | 'mcq' (Trắc nghiệm 4 đáp án)
 
 function reviewView(forceExtra = false) {
   const code = S.lang, t0 = todayN();
   ensureSrsItems(code);
   REVIEW_SKILL = 'vocab';
+  if (S.reviewMode === 'flip' || S.reviewMode === 'mcq') REVIEW_MODE = S.reviewMode;
 
   const allDueItems = srsDueItems(code, 'vocab');
   const totalVaultDue = allDueItems.length;
@@ -13012,9 +13062,24 @@ function reviewView(forceExtra = false) {
     [15, '🔥 15 từ (~6p · Chuyên sâu)']
   ];
 
-  const head = (isReviewing = false) => h('div', { class: 'row between', style: { alignItems: 'center', gap: '6px' } },
+  const modeSwitcher = () => h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap' } },
+    h('button', {
+      type: 'button',
+      class: 'filter-pill' + (REVIEW_MODE === 'flip' ? ' active' : ''),
+      style: { fontSize: '.76rem', padding: '5px 10px', fontWeight: 700 },
+      onclick: () => { REVIEW_MODE = 'flip'; S.reviewMode = 'flip'; save(); reviewView(forceExtra); }
+    }, '🃏 Lật thẻ Flashcard (FSRS)'),
+    h('button', {
+      type: 'button',
+      class: 'filter-pill' + (REVIEW_MODE === 'mcq' ? ' active' : ''),
+      style: { fontSize: '.76rem', padding: '5px 10px', fontWeight: 700 },
+      onclick: () => { REVIEW_MODE = 'mcq'; S.reviewMode = 'mcq'; save(); reviewView(forceExtra); }
+    }, '🎯 Trắc nghiệm 4 đáp án')
+  );
+
+  const head = (isReviewing = false) => h('div', { class: 'row between wrap', style: { alignItems: 'center', gap: '6px' } },
     h('button', { class: 'ghost mini', style: { whiteSpace: 'nowrap', flexShrink: 0, padding: '6px 8px', fontSize: '.84rem' }, onclick: () => go('home') }, '← Về trang Học'),
-    isReviewing ? h('span', { class: 'label', style: { margin: 0, whiteSpace: 'nowrap' } }, 'Ôn tập SRS') : null,
+    isReviewing ? modeSwitcher() : h('span', { class: 'label', style: { margin: 0, whiteSpace: 'nowrap' } }, 'Ôn tập FSRS'),
     h('div', { class: 'row', style: { gap: '6px', alignItems: 'center', flexShrink: 0 } },
       feedbackBtn({ mode: 'review_vocab' }),
       langSwitch()
@@ -13040,8 +13105,11 @@ function reviewView(forceExtra = false) {
       )
     );
     return h('div', { class: 'panel stack review-footer', style: { gap: '8px', padding: '14px', borderRadius: '14px' } },
-      h('b', { style: { fontSize: '1.02rem', color: 'var(--teal)' } }, 'Ôn tập theo gói nhỏ vừa sức (SRS)'),
-      h('p', { class: 'small muted', style: { margin: 0, lineHeight: 1.45 } }, 'Hệ thống tự lọc 10–15 từ dễ quên nhất cho mỗi buổi. Kho từ còn lại được tự động bảo lưu sang ngày tiếp theo.'),
+      h('div', { class: 'row between wrap', style: { alignItems: 'center', gap: '6px' } },
+        h('b', { style: { fontSize: '1.02rem', color: 'var(--teal)' } }, 'Ôn tập thông minh FSRS'),
+        h('span', { class: 'chip small', style: { fontSize: '.7rem' } }, REVIEW_MODE === 'flip' ? 'Chế độ: Lật thẻ 2 mặt' : 'Chế độ: Trắc nghiệm')
+      ),
+      h('p', { class: 'small muted', style: { margin: 0, lineHeight: 1.45 } }, 'Thuật toán FSRS tự tính Độ ổn định (S) & Độ khó (D) của từng từ: thẻ khó quay lại sớm, thẻ nhớ chắc được giãn xa hơn.'),
       h('div', { class: 'row wrap', style: { gap: '6px' } }, quotaBadge, vaultBadge),
       sizeSelector
     );
@@ -13129,9 +13197,13 @@ function reviewView(forceExtra = false) {
     }[item.skill] || h('span', { class: 'chip' }, item.skill);
 
     const subTitle = (item.it && item.it.t && (item.it.t.sub || item.it.t.title)) || (item.it && item.it.lv) || 'Spaced Repetition';
-    const topBar = h('div', { class: 'row between', style: { alignItems: 'center' } },
+    const fsrsMeta = (s && s.st) ? ('S:' + Math.round(s.st) + 'd · D:' + Math.round(s.d || 5)) : ('Hộp ' + ((s && s.b) || 0));
+    const topBar = h('div', { class: 'row between wrap', style: { alignItems: 'center', gap: '6px' } },
       h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } }, skillBadge, h('span', { class: 'small muted' }, subTitle)),
-      h('span', { class: 'chip' }, 'Còn ' + queue.length)
+      h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } },
+        h('span', { class: 'chip small', style: { fontSize: '.7rem' } }, fsrsMeta),
+        h('span', { class: 'chip' }, 'Còn ' + queue.length)
+      )
     );
 
     // 1. TỪ VỰNG / KANJI
@@ -13207,6 +13279,81 @@ function reviewView(forceExtra = false) {
           )
         );
       }
+
+      // CHẾ ĐỘ 1: LẬT THẺ FLASHCARD 2 MẶT + 4 NÚT ĐÁNH GIÁ FSRS
+      if (REVIEW_MODE === 'flip') {
+        const gradeDefs = [
+          [1, 'Quên', 'var(--bad)', 'rgba(220,38,38,.09)'],
+          [2, 'Khó', 'var(--amber)', 'rgba(180,83,9,.09)'],
+          [3, 'Nhớ', 'var(--teal)', 'rgba(15,82,87,.09)'],
+          [4, 'Dễ', 'var(--good)', 'rgba(35,120,74,.10)']
+        ];
+        const gradeBtns = h('div', { class: 'grades', hidden: true },
+          ...gradeDefs.map(([gVal, gLabel, gColor, gBg]) => {
+            const sim = srsNext(s, gVal);
+            const nextTxt = gVal === 1 ? 'Ôn lại ngay' : ivText(sim);
+            return h('button', {
+              type: 'button',
+              'aria-keyshortcuts': String(gVal),
+              style: {
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                padding: '10px 6px', borderRadius: '12px', border: '1.5px solid ' + gColor,
+                background: gBg, color: 'var(--ink)', cursor: 'pointer', gap: '2px'
+              },
+              onclick: () => {
+                S.srs[k] = srsNext(s, gVal);
+                save();
+                if (gVal >= 2) {
+                  markReviewedToday(code, t0);
+                  count++;
+                  addXp(XP_ITEM, code);
+                }
+                queue.shift();
+                if (gVal === 1) queue.push(item);
+                show();
+              }
+            },
+              h('b', { style: { fontSize: '.92rem', color: gColor } }, gLabel),
+              h('small', { style: { fontSize: '.72rem', color: 'var(--muted)' } }, nextTxt)
+            );
+          })
+        );
+
+        const flipBtn = h('button', {
+          type: 'button',
+          class: 'primary block next-btn',
+          style: { fontSize: '1.02rem', fontWeight: 700, padding: '14px 16px', borderRadius: '12px' },
+          onclick: () => {
+            back.hidden = false;
+            flipBtn.hidden = true;
+            gradeBtns.hidden = false;
+            say(code, sayText);
+          }
+        }, '👆 Chạm để lật thẻ & xem đáp án');
+
+        const cardBox = h('div', {
+          class: 'panel card',
+          style: { minHeight: '165px', padding: '16px', gap: '8px', cursor: 'pointer' },
+          onclick: (e) => {
+            if (e.target && e.target.closest && e.target.closest('button')) return;
+            if (back.hidden) flipBtn.click();
+          }
+        },
+          h('p', { class: 'small muted' }, it.v ? 'Nhớ nghĩa & cách đọc, rồi chạm lật thẻ' : 'Nhớ âm Hán Việt & cách đọc, rồi chạm lật thẻ'),
+          front,
+          h('div', { class: 'listen' }, spk(code, sayText, { cls: 'big' })),
+          back
+        );
+
+        return mount(h('div', { class: 'stack-lg', style: { gap: '10px' } }, head(true), topBar,
+          cardBox,
+          flipBtn,
+          gradeBtns,
+          reviewFooter()
+        ));
+      }
+
+      // CHẾ ĐỘ 2: TRẮC NGHIỆM 4 ĐÁP ÁN
       const pool = Object.values(cardIndex(code)), t0r = Date.now();
       const answer = it.v ? it.v.m : it.k.hv;
       const others = it.v
@@ -13231,7 +13378,7 @@ function reviewView(forceExtra = false) {
       const bs = opts.map((o, j) => h('button', { 'aria-keyshortcuts': String(j + 1), onclick: () => {
         const ok = o === answer, sec = (Date.now() - t0r) / 1000, g = !ok ? 1 : sec <= 4 ? 4 : sec <= 10 ? 3 : 2;
         bs.forEach((b, n) => { b.disabled = true; if (opts[n] === answer) b.classList.add('right'); else if (n === j) b.classList.add('wrong'); });
-        S.srs[k] = srsNext(s, g); if (ok) markReviewedToday(code, t0); count++; addXp(g >= 2 ? XP_ITEM : 0, code);
+        S.srs[k] = srsNext(s, g); save(); if (ok) markReviewedToday(code, t0); count++; addXp(g >= 2 ? XP_ITEM : 0, code);
         back.hidden = false; say(code, sayText);
         verdict.replaceChildren(h('div', {
           class: 'feedback ' + (ok ? 'ok' : 'no'),
@@ -17992,21 +18139,40 @@ function createHskkRecorder(item) {
   return box;
 }
 
-// Render giao diện phòng Luyện thi Khẩu ngữ HSKK
+// Render giao diện phòng Luyện thi Khẩu ngữ HSKK & Thi vượt cấp HSK 1–9
+function renderHskModeSwitcher() {
+  return h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap', margin: '4px 0 6px 0' } },
+    h('button', {
+      class: 'filter-pill' + (HSK_EXAM_MODE === 'written' ? ' active' : ''),
+      style: { fontWeight: 700 },
+      onclick: () => { HSK_EXAM_MODE = 'written'; examTabView(); }
+    }, '📝 Thi vượt cấp HSK (1–9)'),
+    h('button', {
+      class: 'filter-pill' + (HSK_EXAM_MODE !== 'written' ? ' active' : ''),
+      style: { fontWeight: 700 },
+      onclick: () => { HSK_EXAM_MODE = 'hskk'; examTabView(); }
+    }, '🎤 Khẩu ngữ HSKK (3–6)')
+  );
+}
+
 function renderHskkExamView() {
+  if (HSK_EXAM_MODE === 'written') {
+    return renderHskWrittenExamView();
+  }
   const code = 'zh';
   const curData = HSKK_DATA[HSKK_LV] || HSKK_DATA['HSKK 4'];
   const levels = ['HSKK 3', 'HSKK 4', 'HSKK 5', 'HSKK 6'];
 
   const header = h('div', { class: 'stack', style: { gap: '4px' } },
     h('div', { class: 'row between', style: { alignItems: 'center' } },
-      h('p', { class: 'label', style: { margin: 0 } }, 'Kỳ Thi Khẩu Ngữ HSKK (Cấp 3–6)'),
+      h('p', { class: 'label', style: { margin: 0 } }, 'Phòng Luyện Thi Tiếng Trung (HSK · HSKK)'),
       h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } },
         feedbackBtn({ mode: 'exam_hskk' }),
         langSwitch()
       )
     ),
-    h('h1', { style: { margin: 0 } }, 'Luyện Thi HSKK Khẩu Ngữ')
+    h('h1', { style: { margin: 0 } }, 'Luyện Thi HSKK Khẩu Ngữ'),
+    renderHskModeSwitcher()
   );
 
   // Chọn cấp độ HSKK 3 - 6
@@ -18590,10 +18756,25 @@ function buildShuffledJlptExam(examList, level) {
   };
 }
 
+let EXAM_LIVE_TIMER = null;
+function stopExamLiveTimer() {
+  if (EXAM_LIVE_TIMER && EXAM_LIVE_TIMER.iv) {
+    clearInterval(EXAM_LIVE_TIMER.iv);
+    EXAM_LIVE_TIMER.iv = null;
+  }
+}
+function formatExamSec(sec) {
+  const s = Math.max(0, Math.floor(sec || 0));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return (m < 10 ? '0' + m : String(m)) + ':' + (r < 10 ? '0' + r : String(r));
+}
+
 // Đề thi vượt cấp chuẩn JLPT N5–N1 (tự động xáo trộn câu hỏi & đáp án mỗi lần vào thi)
 async function startJlptLevelExam(lv, opts = {}) {
   const level = String(lv || 'N5').toUpperCase();
   const returnView = opts.returnView || 'home';
+  stopExamLiveTimer();
   VIEW = 'exam';
   setTabs(false);
   mount(h('p', { class: 'loading' }, 'Đang xáo trộn đề thi chuẩn JLPT ' + level + '…'));
@@ -18619,6 +18800,7 @@ async function startJlptLevelExam(lv, opts = {}) {
   }
 
   const exit = () => {
+    stopExamLiveTimer();
     stopSay();
     setTabs(true);
     if (returnView === 'exam') { VIEW = 'exam'; examTabView(); }
@@ -18627,6 +18809,10 @@ async function startJlptLevelExam(lv, opts = {}) {
 
   let exam = buildShuffledJlptExam(examList, level);
   const examId = level;
+  const parseHintMin = (str) => { const m = String(str || '').match(/(\d+)/); return m ? Number(m[1]) : 25; };
+  let totalSec = parseHintMin(exam.timeHint) * 60;
+  let remSec = totalSec;
+  let paused = false;
 
   const catId = level.toLowerCase();
   const catObj = opts.catObj || ((CATEGORIES.ja || []).find((c) => c.id === catId) || { id: catId, level, short: level, name: level });
@@ -18652,6 +18838,28 @@ async function startJlptLevelExam(lv, opts = {}) {
   };
   const getAllQuestions = () => (exam.sections || []).flatMap(allSectionQuestions);
 
+  let submitExamFn = () => {};
+  const startTimerLoop = () => {
+    stopExamLiveTimer();
+    EXAM_LIVE_TIMER = {
+      iv: setInterval(() => {
+        if (VIEW !== 'exam' || submitted) { stopExamLiveTimer(); return; }
+        if (paused) return;
+        remSec = Math.max(0, remSec - 1);
+        const el = document.getElementById('jlpt_timer_txt');
+        const chip = document.getElementById('jlpt_timer_chip');
+        if (el) el.textContent = (paused ? '⏸ ' : '⏱ ') + formatExamSec(remSec);
+        if (chip) chip.className = 'chip ' + (remSec <= 300 ? 'warn' : 'good');
+        if (remSec <= 0) {
+          stopExamLiveTimer();
+          toast('⏰ Đã hết thời gian làm bài! Hệ thống tự động nộp bài.');
+          submitExamFn();
+        }
+      }, 1000)
+    };
+  };
+  startTimerLoop();
+
   function renderExamPage() {
     const allQuestions = getAllQuestions();
     const totalQs = allQuestions.length;
@@ -18661,13 +18869,30 @@ async function startJlptLevelExam(lv, opts = {}) {
       submitted && curAtt ? (curAtt.score + '/' + totalQs + ' (' + curAtt.pct + '%)') : ('Đã chọn: ' + answeredCount + '/' + totalQs)
     );
 
+    const timerChip = !submitted ? h('button', {
+      type: 'button',
+      id: 'jlpt_timer_chip',
+      class: 'chip ' + (remSec <= 300 ? 'warn' : 'good'),
+      title: 'Bấm để Tạm dừng / Tiếp tục đồng hồ',
+      style: { cursor: 'pointer', fontWeight: 700, fontVariantNumeric: 'tabular-nums', border: '1px solid var(--line)' },
+      onclick: () => {
+        paused = !paused;
+        const el = document.getElementById('jlpt_timer_txt');
+        if (el) el.textContent = (paused ? '⏸ ' : '⏱ ') + formatExamSec(remSec);
+      }
+    }, h('span', { id: 'jlpt_timer_txt' }, (paused ? '⏸ ' : '⏱ ') + formatExamSec(remSec))) : null;
+
     const reshuffleExam = () => {
       stopSay();
       exam = buildShuffledJlptExam(examList, level);
+      totalSec = parseHintMin(exam.timeHint) * 60;
+      remSec = totalSec;
+      paused = false;
       userAns = {};
       submitted = false;
       currentAtt = null;
       newlyUnlockedInfo = null;
+      startTimerLoop();
       renderExamPage();
       window.scrollTo({ top: 0, behavior: 'smooth' });
       toast('🎲 Đã xáo trộn đề JLPT ' + level + ' mới!');
@@ -18679,6 +18904,7 @@ async function startJlptLevelExam(lv, opts = {}) {
         h('div', { style: { fontWeight: 700, fontSize: '.95rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, '🇯🇵 ' + exam.title),
         h('div', { class: 'small muted', style: { fontSize: '.72rem' } }, exam.timeHint + ' · Chuẩn đạt ≥ ' + (exam.passPct || 80) + '%')
       ),
+      timerChip,
       !submitted && h('button', { type: 'button', class: 'ghost mini', title: 'Đổi đề xáo trộn mới', onclick: reshuffleExam }, '🎲 Đổi đề'),
       headerChip
     );
@@ -18690,6 +18916,9 @@ async function startJlptLevelExam(lv, opts = {}) {
       const secBadges = (att.secScores || []).map((sc) =>
         h('span', { class: 'chip ' + (sc.ok === sc.tot ? 'good' : ''), style: { fontSize: '.76rem' } }, sc.short + ': ' + sc.ok + '/' + sc.tot)
       );
+      if (att.spentSec !== undefined) {
+        secBadges.push(h('span', { class: 'chip small', style: { fontSize: '.76rem' } }, '⏱ Thời gian làm: ' + formatExamSec(att.spentSec)));
+      }
       resultBanner = h('div', {
         id: 'jlpt_result_card',
         class: 'panel stack',
@@ -18941,6 +19170,46 @@ async function startJlptLevelExam(lv, opts = {}) {
       makeToggleAllBtn(() => sectionsWrap, 'details.acc-card', { labelOpen: '📖 Mở tất cả phần', labelClose: '📁 Thu gọn' })
     );
 
+    submitExamFn = () => {
+      if (submitted) return;
+      stopExamLiveTimer();
+      stopSay();
+      const curQs = getAllQuestions();
+      const curTotal = curQs.length;
+      let score = 0;
+      const secScores = (exam.sections || []).map((sec) => {
+        const qs = allSectionQuestions(sec);
+        const ok = qs.filter((q) => userAns[q.id] === q.ans).length;
+        score += ok;
+        const shortName = sec.id === 'vocab' ? '文字・語彙' : (sec.id === 'grammar_reading' ? '文法・読解' : '聴解');
+        return { id: sec.id, short: shortName, ok, tot: qs.length };
+      });
+      const pct = Math.round((score / curTotal) * 100);
+      const passed = pct >= (exam.passPct || 80);
+      const prev = S.jlpt_attempts[examId];
+      currentAtt = {
+        score,
+        total: curTotal,
+        pct,
+        bestPct: Math.max(pct, (prev && (prev.bestPct || prev.pct)) || 0),
+        passed: passed || !!(prev && prev.passed),
+        submitted: true,
+        secScores,
+        spentSec: Math.max(1, totalSec - remSec)
+      };
+      S.jlpt_attempts[examId] = currentAtt;
+      if (passed && topics.length) {
+        newlyUnlockedInfo = unlockCategoryTopics('ja', topics, pct);
+      }
+      addXp(score * XP_ITEM, 'ja');
+      checkAch();
+      save();
+      submitted = true;
+      renderExamPage();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (passed) toast('🏆 Chúc mừng! Đạt ' + pct + '% — Vượt cấp JLPT ' + level + ' thành công!');
+    };
+
     const submitPanel = !submitted ? h('div', { class: 'panel stack', style: { padding: '14px', borderRadius: '14px', gap: '8px', background: 'var(--surface)' } },
       h('div', { id: 'jlpt_submit_hint', class: 'small muted center' },
         'Đã làm ' + answeredCount + '/' + totalQs + ' câu' + (answeredCount < totalQs ? ' (còn ' + (totalQs - answeredCount) + ' câu chưa chọn)' : ' · Sẵn sàng nộp bài!')
@@ -18949,42 +19218,7 @@ async function startJlptLevelExam(lv, opts = {}) {
         type: 'button',
         class: 'accent block',
         style: { fontWeight: 800, fontSize: '1rem', padding: '14px' },
-        onclick: () => {
-          stopSay();
-          const curQs = getAllQuestions();
-          const curTotal = curQs.length;
-          let score = 0;
-          const secScores = (exam.sections || []).map((sec) => {
-            const qs = allSectionQuestions(sec);
-            const ok = qs.filter((q) => userAns[q.id] === q.ans).length;
-            score += ok;
-            const shortName = sec.id === 'vocab' ? '文字・語彙' : (sec.id === 'grammar_reading' ? '文法・読解' : '聴解');
-            return { id: sec.id, short: shortName, ok, tot: qs.length };
-          });
-          const pct = Math.round((score / curTotal) * 100);
-          const passed = pct >= (exam.passPct || 80);
-          const prev = S.jlpt_attempts[examId];
-          currentAtt = {
-            score,
-            total: curTotal,
-            pct,
-            bestPct: Math.max(pct, (prev && (prev.bestPct || prev.pct)) || 0),
-            passed: passed || !!(prev && prev.passed),
-            submitted: true,
-            secScores
-          };
-          S.jlpt_attempts[examId] = currentAtt;
-          if (passed && topics.length) {
-            newlyUnlockedInfo = unlockCategoryTopics('ja', topics, pct);
-          }
-          addXp(score * XP_ITEM, 'ja');
-          checkAch();
-          save();
-          submitted = true;
-          renderExamPage();
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-          if (passed) toast('🏆 Chúc mừng! Đạt ' + pct + '% — Vượt cấp JLPT ' + level + ' thành công!');
-        }
+        onclick: submitExamFn
       }, '📝 Nộp bài & Chấm điểm JLPT ' + level)
     ) : null;
 
@@ -18992,6 +19226,710 @@ async function startJlptLevelExam(lv, opts = {}) {
   }
 
   renderExamPage();
+}
+
+let HSK_WRITTEN_LV = 1;
+const HSK_WRITTEN_INFO = {
+  1: { level: 'HSK 1', time: '40 phút (Chuẩn)', qs: 40, pass: '120 / 200 (≥ 80% để vượt cấp)', desc: 'Cấp độ Sơ cấp 1 (150+ từ vựng): Giao tiếp sinh hoạt cơ bản, có hỗ trợ Pinyin.', parts: ['Phần 1: 听力 Nghe hiểu (Câu ngắn & hội thoại cơ bản)', 'Phần 2: 词汇 Từ vựng & Chữ Hán (Nghĩa Việt · Pinyin)', 'Phần 3: 语法 Ngữ pháp & Điền từ vào chỗ trống', 'Phần 4: 阅读 Đọc hiểu câu & chọn đáp án đúng'] },
+  2: { level: 'HSK 2', time: '55 phút (Chuẩn)', qs: 60, pass: '120 / 200 (≥ 80% để vượt cấp)', desc: 'Cấp độ Sơ cấp 2 (300+ từ vựng): Giao tiếp hàng ngày trôi chảy về mua sắm, thời tiết, đi lại.', parts: ['Phần 1: 听力 Nghe hiểu (Hội thoại 2 lượt)', 'Phần 2: 词汇 Từ vựng & Chữ Hán', 'Phần 3: 语法 Ngữ pháp & Điền từ (了, 比, 因为…所以)', 'Phần 4: 阅读 Đọc hiểu hội thoại ngắn'] },
+  3: { level: 'HSK 3', time: '90 phút (Chuẩn)', qs: 80, pass: '180 / 300 (≥ 80% để vượt cấp)', desc: 'Cấp độ Trung cấp 1 (600+ từ vựng): Giao tiếp học tập, công việc, du lịch (không kèm Pinyin khi thi).', parts: ['Phần 1: 听力 Nghe hiểu đoạn hội thoại', 'Phần 2: 词汇 Từ vựng & Kết hợp từ', 'Phần 3: 语法 Ngữ pháp & Điền từ (把, 被, 越…越)', 'Phần 4: 阅读 Đọc hiểu đoạn văn ngắn'] },
+  4: { level: 'HSK 4', time: '105 phút (Chuẩn)', qs: 100, pass: '180 / 300 (≥ 80% để vượt cấp)', desc: 'Cấp độ Trung cấp 2 (1.200+ từ vựng): Thảo luận chủ đề xã hội, văn hóa, công việc.', parts: ['Phần 1: 听力 Nghe hiểu hội thoại & đoạn tin', 'Phần 2: 词汇 Từ vựng & Thành ngữ cơ bản', 'Phần 3: 语法 Ngữ pháp & Hoàn thành câu', 'Phần 4: 阅读 Đọc hiểu & Suy luận ý chính'] },
+  5: { level: 'HSK 5', time: '125 phút (Chuẩn)', qs: 100, pass: '180 / 300 (≥ 80% để vượt cấp)', desc: 'Cấp độ Cao cấp 1 (2.500+ từ vựng): Đọc báo chí, xem phim, thuyết trình mạch lạc.', parts: ['Phần 1: 听力 Nghe hiểu bài nói & phỏng vấn', 'Phần 2: 词汇 Từ vựng học thuật & Từ gần nghĩa', 'Phần 3: 语法 Ngữ pháp nâng cao & Điền ngữ cảnh', 'Phần 4: 阅读 Đọc hiểu văn bản dài'] },
+  6: { level: 'HSK 6', time: '140 phút (Chuẩn)', qs: 101, pass: '180 / 300 (≥ 80% để vượt cấp)', desc: 'Cấp độ Cao cấp 2 (5.000+ từ vựng): Nắm bắt sâu văn bản học thuật, kinh tế, văn hóa.', parts: ['Phần 1: 听力 Nghe hiểu bài giảng & bình luận', 'Phần 2: 词汇 Từ vựng cao cấp & Thành ngữ', 'Phần 3: 语法 Ngữ pháp & Chọn từ chính xác', 'Phần 4: 阅读 Đọc hiểu phân tích luận điểm'] },
+  7: { level: 'HSK 7 (3.0)', time: '150 phút (HSK 3.0)', qs: 98, pass: '≥ 80% để vượt cấp', desc: 'Cấp độ Cao cấp HSK 3.0 (Bậc 7): Nghiên cứu học thuật, hội thảo chuyên ngành.', parts: ['Phần 1: 听力 Nghe hiểu học thuật', 'Phần 2: 词汇 Từ vựng chuyên ngành', 'Phần 3: 语法 Ngữ pháp & Văn phong trang trọng', 'Phần 4: 阅读 Đọc hiểu luận văn & báo cáo'] },
+  8: { level: 'HSK 8 (3.0)', time: '150 phút (HSK 3.0)', qs: 98, pass: '≥ 80% để vượt cấp', desc: 'Cấp độ Cao cấp HSK 3.0 (Bậc 8): Phân tích chuyên sâu chính sách, khoa học, kinh tế.', parts: ['Phần 1: 听力 Nghe hiểu chuyên sâu', 'Phần 2: 词汇 Từ vựng học thuật nâng cao', 'Phần 3: 语法 Ngữ pháp & Tu từ', 'Phần 4: 阅读 Đọc hiểu văn bản chuyên môn'] },
+  9: { level: 'HSK 9 (3.0)', time: '150 phút (HSK 3.0)', qs: 98, pass: '≥ 80% để vượt cấp', desc: 'Cấp độ Tinh thông HSK 3.0 (Bậc 9): Đỉnh cao ngôn ngữ tương đương bản ngữ học thuật.', parts: ['Phần 1: 听力 Nghe hiểu diễn thuyết & tranh luận', 'Phần 2: 词汇 Từ vựng tinh hoa & Điển cố', 'Phần 3: 语法 Ngữ pháp & Diễn đạt tinh tế', 'Phần 4: 阅读 Đọc hiểu & Phản biện học thuật'] }
+};
+
+function getHskTopics(lvNum) {
+  const catId = 'hsk' + lvNum;
+  const zhMeta = (TOPIC_META && TOPIC_META.zh) || {};
+  const list = (DATA.zh && DATA.zh.topics) ? DATA.zh.topics.filter((t) => {
+    const m = zhMeta[String(t.id)];
+    return (t.category === catId) || (m && m[0] === catId);
+  }) : [];
+  return list;
+}
+
+function buildShuffledHskExam(lvNum, topics) {
+  const showPin = lvNum <= 2;
+  const shuffle = (arr) => {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  };
+  const topicList = topics && topics.length ? topics : getHskTopics(lvNum);
+  const audioMap = (DATA.zh && DATA.zh.audio) || {};
+  const allVocab = [];
+  const allSentences = [];
+  const allQuizzes = [];
+  const allFills = [];
+
+  topicList.forEach((t) => {
+    const tName = (t.sub || t.title || ('Bài ' + t.id));
+    (t.vocab || []).forEach((v) => {
+      if (v && v.w && v.m) {
+        allVocab.push({ v, tName, topic: t });
+        if (v.ex && v.exm) {
+          allSentences.push({ zh: v.ex, r: v.exr || '', m: v.exm, tName, topic: t, hasAudio: !!audioMap[v.ex] });
+        }
+      }
+    });
+    (t.speak || []).forEach((sp) => {
+      (sp.lines || []).forEach((ln) => {
+        if (ln && ln.t && ln.m) {
+          allSentences.push({ zh: ln.t, r: ln.r || '', m: ln.m, tName, topic: t, hasAudio: !!audioMap[ln.t] });
+        }
+      });
+    });
+    (t.quiz || []).forEach((q) => {
+      if (q && q.q && Array.isArray(q.o) && q.o.length >= 2) {
+        allQuizzes.push({ q, tName, topic: t });
+      }
+    });
+    const fl = Array.isArray(t.fills) ? t.fills : (Array.isArray(t.fill) ? t.fill : (t.fill ? [t.fill] : []));
+    fl.forEach((f) => {
+      if (f && f.text && f.text.indexOf('[[') !== -1) {
+        allFills.push({ f, tName, topic: t });
+      }
+    });
+  });
+
+  const usedTopics = new Set();
+  const shuffleOpts = (opts, correctIdx) => {
+    const tagged = opts.map((o, idx) => ({ o, isAns: idx === correctIdx }));
+    const mixed = shuffle(tagged);
+    return {
+      options: mixed.map((x) => x.o),
+      ans: mixed.findIndex((x) => x.isAns)
+    };
+  };
+
+  // 1. Phần Nghe hiểu (听力 · 5 câu)
+  const audioPool = shuffle(allSentences.filter((s) => s.hasAudio));
+  const fallbackSentPool = shuffle(allSentences.filter((s) => !s.hasAudio));
+  const listenPool = audioPool.concat(fallbackSentPool);
+  const listenQs = [];
+  const seenListen = new Set();
+  for (let i = 0; i < listenPool.length && listenQs.length < 5; i++) {
+    const item = listenPool[i];
+    if (seenListen.has(item.zh)) continue;
+    seenListen.add(item.zh);
+    const dist = shuffle(allSentences.filter((s) => s.m !== item.m)).slice(0, 3).map((s) => s.m);
+    if (dist.length < 3) {
+      const vDist = shuffle(allVocab.filter((x) => x.v.m !== item.m)).slice(0, 3 - dist.length).map((x) => x.v.m);
+      vDist.forEach((x) => dist.push(x));
+    }
+    if (dist.length < 2) continue;
+    const mixed = shuffleOpts([item.m].concat(dist), 0);
+    usedTopics.add(item.topic);
+    listenQs.push({
+      id: 'hsk_l_' + listenQs.length,
+      kind: 'listen',
+      prompt: 'Nghe đoạn âm thanh tiếng Trung và chọn nghĩa tiếng Việt đúng nhất:',
+      audioText: item.zh,
+      options: mixed.options,
+      ans: mixed.ans,
+      explain: item.zh + (item.r ? ' (' + item.r + ')' : '') + ' → ' + item.m + ' · [' + item.tName + ']'
+    });
+  }
+
+  // 2. Phần Từ vựng & Chữ Hán (词汇 · 5 câu)
+  const vocabPool = shuffle(allVocab);
+  const vocabQs = [];
+  const seenVocab = new Set();
+  for (let i = 0; i < vocabPool.length && vocabQs.length < 5; i++) {
+    const item = vocabPool[i];
+    const v = item.v;
+    if (seenVocab.has(v.w)) continue;
+    seenVocab.add(v.w);
+    const askMeaning = (vocabQs.length % 2 === 0);
+    if (askMeaning) {
+      const dist = shuffle(allVocab.filter((x) => x.v.m !== v.m && x.v.w !== v.w)).slice(0, 3).map((x) => x.v.m);
+      if (dist.length < 2) continue;
+      const mixed = shuffleOpts([v.m].concat(dist), 0);
+      usedTopics.add(item.topic);
+      vocabQs.push({
+        id: 'hsk_v_' + vocabQs.length,
+        kind: 'vocab',
+        prompt: 'Từ « ' + v.w + (showPin && v.r ? ' (' + v.r + ')' : '') + ' » có nghĩa là gì?',
+        audioText: v.w,
+        options: mixed.options,
+        ans: mixed.ans,
+        explain: v.w + (v.r ? ' [' + v.r + ']' : '') + ' = ' + v.m + (v.ex ? ' · VD: ' + v.ex + ' (' + (v.exm || '') + ')' : '') + ' · [' + item.tName + ']'
+      });
+    } else {
+      const dist = shuffle(allVocab.filter((x) => x.v.w !== v.w && x.v.m !== v.m)).slice(0, 3).map((x) => x.v.w + (showPin && x.v.r ? ' (' + x.v.r + ')' : ''));
+      if (dist.length < 2) continue;
+      const corr = v.w + (showPin && v.r ? ' (' + v.r + ')' : '');
+      const mixed = shuffleOpts([corr].concat(dist), 0);
+      usedTopics.add(item.topic);
+      vocabQs.push({
+        id: 'hsk_v_' + vocabQs.length,
+        kind: 'vocab',
+        prompt: 'Chọn chữ Hán đúng với nghĩa: « ' + v.m + ' »',
+        audioText: v.w,
+        options: mixed.options,
+        ans: mixed.ans,
+        explain: v.w + (v.r ? ' [' + v.r + ']' : '') + ' = ' + v.m + ' · [' + item.tName + ']'
+      });
+    }
+  }
+
+  // 3. Phần Ngữ pháp & Điền từ (语法 · 5 câu)
+  const gramQs = [];
+  const gramLvStr = 'HSK ' + lvNum;
+  const gList = shuffle(grammarPoints('zh').filter((x) => x.lv === gramLvStr || (lvNum >= 7 && x.lv === 'HSK 6')));
+  for (let i = 0; i < gList.length && gramQs.length < 3; i++) {
+    const gp = gList[i];
+    const gq = gp.g && gp.g.quiz && gp.g.quiz[0];
+    if (gq && Array.isArray(gq.o) && gq.o.length >= 2) {
+      const mixed = shuffleOpts(gq.o, gq.a || 0);
+      gramQs.push({
+        id: 'hsk_g_' + gramQs.length,
+        kind: 'gram',
+        prompt: gq.q + (gq.sub ? ' (' + gq.sub + ')' : ''),
+        options: mixed.options,
+        ans: mixed.ans,
+        explain: (gq.why || gp.g.t) + (gp.g.f ? ' · Công thức: ' + gp.g.f : '')
+      });
+    }
+  }
+  const fillPool = shuffle(allFills);
+  for (let i = 0; i < fillPool.length && gramQs.length < 5; i++) {
+    const item = fillPool[i];
+    const m = item.f.text.match(/\[\[([^\]]+)\]\]/);
+    if (!m) continue;
+    const choices = m[1].split('|').map((s) => s.trim()).filter(Boolean);
+    if (choices.length < 2) continue;
+    const correctWord = choices[0];
+    const blanked = item.f.text.replace(m[0], '（　　）').replace(/\[\[([^|\]]+)[^\]]*\]\]/g, '$1');
+    const mixed = shuffleOpts(choices, 0);
+    usedTopics.add(item.topic);
+    gramQs.push({
+      id: 'hsk_g_' + gramQs.length,
+      kind: 'gram',
+      prompt: 'Chọn từ thích hợp điền vào chỗ trống:\n' + blanked,
+      options: mixed.options,
+      ans: mixed.ans,
+      explain: 'Đáp án: ' + correctWord + (item.f.trans ? ' · Dịch: ' + item.f.trans : '') + ' · [' + item.tName + ']'
+    });
+  }
+  // Bổ sung từ câu ví dụ có chứa từ vựng (cho HSK 4–9 khi không có fills)
+  const exFillPool = shuffle(allVocab.filter((x) => x.v.ex && x.v.w && x.v.ex.indexOf(x.v.w) !== -1));
+  for (let i = 0; i < exFillPool.length && gramQs.length < 5; i++) {
+    const item = exFillPool[i];
+    const v = item.v;
+    const blanked = v.ex.replace(v.w, '（　　）');
+    const dist = shuffle(allVocab.filter((x) => x.v.w !== v.w)).slice(0, 3).map((x) => x.v.w);
+    if (dist.length < 2) continue;
+    const mixed = shuffleOpts([v.w].concat(dist), 0);
+    usedTopics.add(item.topic);
+    gramQs.push({
+      id: 'hsk_g_' + gramQs.length,
+      kind: 'gram',
+      prompt: 'Chọn từ thích hợp điền vào chỗ trống:\n' + blanked + (v.exm ? '\n(' + v.exm + ')' : ''),
+      audioText: v.ex,
+      options: mixed.options,
+      ans: mixed.ans,
+      explain: v.ex + (v.exr ? ' [' + v.exr + ']' : '') + ' → ' + v.w + ' (' + v.m + ') · [' + item.tName + ']'
+    });
+  }
+
+  // 4. Phần Đọc hiểu & Hội thoại (阅读 · 5 câu)
+  const readQs = [];
+  const quizPool = shuffle(allQuizzes);
+  for (let i = 0; i < quizPool.length && readQs.length < 5; i++) {
+    const item = quizPool[i];
+    const q = item.q;
+    const mixed = shuffleOpts(q.o, q.a || 0);
+    let passageHtml = '';
+    if (Array.isArray(q.dialogue) && q.dialogue.length) {
+      passageHtml = q.dialogue.slice(0, 6).map((ln) => (ln.s ? ln.s + ': ' : '') + ln.t).join('\n');
+    }
+    usedTopics.add(item.topic);
+    readQs.push({
+      id: 'hsk_r_' + readQs.length,
+      kind: 'read',
+      passage: passageHtml,
+      prompt: q.q,
+      options: mixed.options,
+      ans: mixed.ans,
+      explain: (q.why || '') + ' · [' + item.tName + ']'
+    });
+  }
+  // Bổ sung câu đọc hiểu từ câu ví dụ nếu thiếu
+  const sentReadPool = shuffle(allSentences);
+  for (let i = 0; i < sentReadPool.length && readQs.length < 5; i++) {
+    const item = sentReadPool[i];
+    const dist = shuffle(allSentences.filter((s) => s.m !== item.m)).slice(0, 3).map((s) => s.m);
+    if (dist.length < 2) continue;
+    const mixed = shuffleOpts([item.m].concat(dist), 0);
+    usedTopics.add(item.topic);
+    readQs.push({
+      id: 'hsk_r_' + readQs.length,
+      kind: 'read',
+      prompt: 'Đọc câu sau và chọn nghĩa đúng nhất:\n« ' + item.zh + (showPin && item.r ? ' (' + item.r + ')' : '') + ' »',
+      audioText: item.zh,
+      options: mixed.options,
+      ans: mixed.ans,
+      explain: item.zh + (item.r ? ' [' + item.r + ']' : '') + ' → ' + item.m + ' · [' + item.tName + ']'
+    });
+  }
+
+  const sections = [
+    { id: 'hsk_listen', title: 'Phần 1 · 听力 Nghe hiểu', short: '听力', desc: 'Nghe audio bản xứ và chọn đáp án đúng', questions: listenQs },
+    { id: 'hsk_vocab', title: 'Phần 2 · 词汇 Từ vựng & Chữ Hán', short: '词汇', desc: 'Từ vựng trọng tâm trong các bài học HSK ' + lvNum, questions: vocabQs },
+    { id: 'hsk_gram', title: 'Phần 3 · 语法 Ngữ pháp & Điền từ', short: '语法', desc: 'Cấu trúc ngữ pháp và điền từ theo ngữ cảnh', questions: gramQs },
+    { id: 'hsk_read', title: 'Phần 4 · 阅读 Đọc hiểu & Hội thoại', short: '阅读', desc: 'Đọc hiểu hội thoại và câu từ bài học HSK ' + lvNum, questions: readQs }
+  ].filter((sec) => sec.questions.length > 0);
+
+  return {
+    examId: 'HSK_' + lvNum + '_MIX_' + Date.now(),
+    lvNum: lvNum,
+    level: 'HSK ' + lvNum,
+    title: 'Đề thi vượt cấp HSK ' + lvNum + ' (Xáo trộn ngẫu nhiên)',
+    subtitle: 'Bám sát ' + topicList.length + ' bài học HSK ' + lvNum + ' (' + allVocab.length + ' từ vựng · ' + allQuizzes.length + ' câu đọc hiểu)',
+    timeMin: lvNum <= 2 ? 20 : (lvNum <= 4 ? 25 : 30),
+    passPct: 80,
+    sections: sections,
+    usedTopics: Array.from(usedTopics)
+  };
+}
+
+async function startHskLevelExam(lvNum, opts = {}) {
+  const num = Math.max(1, Math.min(9, Number(lvNum) || 1));
+  const level = 'HSK ' + num;
+  const returnView = opts.returnView || 'home';
+  stopExamLiveTimer();
+  VIEW = 'exam';
+  setTabs(false);
+  mount(h('p', { class: 'loading' }, 'Đang tạo & xáo trộn đề thi chuẩn ' + level + '…'));
+
+  try {
+    await loadLang('zh');
+  } catch (e) {}
+
+  const catId = 'hsk' + num;
+  const catObj = opts.catObj || ((CATEGORIES.zh || []).find((c) => c.id === catId) || { id: catId, level: level, short: level, name: level });
+  const topics = (opts.topics && opts.topics.length) ? opts.topics : getHskTopics(num);
+
+  let exam = buildShuffledHskExam(num, topics);
+  if (exam.usedTopics && exam.usedTopics.length) {
+    exam.usedTopics.slice(0, 12).forEach((subT) => {
+      try { preloadTopicAudio('zh', subT); } catch (e) {}
+    });
+  }
+
+  let totalSec = (exam.timeMin || 25) * 60;
+  let remSec = totalSec;
+  let paused = false;
+
+  const exit = () => {
+    stopExamLiveTimer();
+    stopSay();
+    setTabs(true);
+    if (returnView === 'exam') { VIEW = 'exam'; HSK_EXAM_MODE = 'written'; HSK_WRITTEN_LV = num; examTabView(); }
+    else go('home');
+  };
+
+  S.hsk_attempts = S.hsk_attempts || {};
+  let userAns = {};
+  let submitted = false;
+  let currentAtt = null;
+  let newlyUnlockedInfo = null;
+
+  const getAllQuestions = () => {
+    const list = [];
+    (exam.sections || []).forEach((s) => (s.questions || []).forEach((q) => list.push(q)));
+    return list;
+  };
+
+  let submitHskFn = () => {};
+  const startTimerLoop = () => {
+    stopExamLiveTimer();
+    EXAM_LIVE_TIMER = {
+      iv: setInterval(() => {
+        if (VIEW !== 'exam' || submitted) { stopExamLiveTimer(); return; }
+        if (paused) return;
+        remSec = Math.max(0, remSec - 1);
+        const el = document.getElementById('hsk_timer_txt');
+        const chip = document.getElementById('hsk_timer_chip');
+        if (el) el.textContent = (paused ? '⏸ ' : '⏱ ') + formatExamSec(remSec);
+        if (chip) chip.className = 'chip ' + (remSec <= 300 ? 'warn' : 'good');
+        if (remSec <= 0) {
+          stopExamLiveTimer();
+          toast('⏰ Đã hết thời gian làm bài! Hệ thống tự động nộp bài.');
+          submitHskFn();
+        }
+      }, 1000)
+    };
+  };
+  startTimerLoop();
+
+  function renderExamPage() {
+    const allQs = getAllQuestions();
+    const totalQs = allQs.length;
+    const answeredCount = allQs.filter((q) => userAns[q.id] !== undefined).length;
+    const savedAtt = S.hsk_attempts[level];
+
+    const timerChip = !submitted ? h('button', {
+      type: 'button',
+      id: 'hsk_timer_chip',
+      class: 'chip ' + (remSec <= 300 ? 'warn' : 'good'),
+      title: 'Bấm để Tạm dừng / Tiếp tục đồng hồ',
+      style: { cursor: 'pointer', fontWeight: 700, fontVariantNumeric: 'tabular-nums', border: '1px solid var(--line)' },
+      onclick: () => {
+        paused = !paused;
+        const el = document.getElementById('hsk_timer_txt');
+        if (el) el.textContent = (paused ? '⏸ ' : '⏱ ') + formatExamSec(remSec);
+      }
+    }, h('span', { id: 'hsk_timer_txt' }, (paused ? '⏸ ' : '⏱ ') + formatExamSec(remSec))) : null;
+
+    const topbar = h('div', { class: 'row between wrap', style: { position: 'sticky', top: 0, zIndex: 10, background: 'var(--bg)', paddingBlock: '6px', borderBottom: '1px solid var(--line)', gap: '8px', alignItems: 'center', marginBottom: '4px' } },
+      h('button', { type: 'button', class: 'ghost mini', onclick: exit }, '← Thoát phòng thi'),
+      h('div', { class: 'row', style: { gap: '6px', alignItems: 'center', flexWrap: 'wrap' } },
+        timerChip,
+        !submitted ? h('button', {
+          type: 'button',
+          class: 'ghost mini',
+          style: { fontSize: '.76rem', fontWeight: 700, border: '1px solid var(--line)' },
+          onclick: () => {
+            stopSay();
+            exam = buildShuffledHskExam(num, topics);
+            if (exam.usedTopics) exam.usedTopics.slice(0, 12).forEach((subT) => { try { preloadTopicAudio('zh', subT); } catch (e) {} });
+            totalSec = (exam.timeMin || 25) * 60;
+            remSec = totalSec;
+            paused = false;
+            userAns = {};
+            submitted = false;
+            currentAtt = null;
+            newlyUnlockedInfo = null;
+            startTimerLoop();
+            renderExamPage();
+            toast('🎲 Đã xáo trộn đề ' + level + ' mới!');
+          }
+        }, '🔄 Đổi đề') : null,
+        h('span', { id: 'hsk_top_prog', class: 'chip ' + (submitted ? (currentAtt && currentAtt.passed ? 'good' : 'warn') : 'accent'), style: { fontWeight: 700 } },
+          submitted && currentAtt
+            ? (currentAtt.score + '/' + currentAtt.total + ' câu (' + currentAtt.pct + '%)')
+            : ('Đã chọn: ' + answeredCount + '/' + totalQs)
+        )
+      )
+    );
+
+    let resultBanner = null;
+    if (submitted && currentAtt) {
+      const att = currentAtt;
+      resultBanner = h('div', {
+        class: 'panel stack',
+        style: {
+          padding: '16px',
+          borderRadius: '14px',
+          gap: '8px',
+          background: att.passed ? 'rgba(35,120,74,.10)' : 'rgba(180,83,9,.08)',
+          border: att.passed ? '1.5px solid rgba(35,120,74,.45)' : '1.5px solid rgba(180,83,9,.38)'
+        }
+      },
+        h('div', { class: 'row between wrap', style: { gap: '8px', alignItems: 'center' } },
+          h('h2', { style: { margin: 0, fontSize: '1.12rem', color: att.passed ? 'var(--good)' : 'var(--amber)' } },
+            att.passed ? '🏆 ĐẠT CHUẨN VƯỢT CẤP ' + level + '!' : '💡 CHƯA ĐẠT CHUẨN VƯỢT CẤP ' + level
+          ),
+          h('span', { class: 'chip ' + (att.passed ? 'good' : 'warn'), style: { fontSize: '.88rem', fontWeight: 800 } },
+            att.score + '/' + att.total + ' · ' + att.pct + '%'
+          )
+        ),
+        h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap' } },
+          ...(att.secScores || []).map((sc) => h('span', { class: 'chip small', style: { fontSize: '.74rem' } },
+            sc.short + ': ' + sc.ok + '/' + sc.tot
+          )),
+          att.spentSec !== undefined ? h('span', { class: 'chip small', style: { fontSize: '.74rem' } }, '⏱ Thời gian làm: ' + formatExamSec(att.spentSec)) : null
+        ),
+        h('p', { class: 'small', style: { margin: 0, lineHeight: 1.45 } },
+          att.passed
+            ? ('Tuyệt vời! Bạn đã đạt ' + att.pct + '% (≥ ' + (exam.passPct || 80) + '%). ' + (newlyUnlockedInfo && newlyUnlockedInfo.marked > 0 ? 'Hệ thống đã tự động mở khóa và đánh dấu hoàn thành 100% (' + newlyUnlockedInfo.marked + ' bài mới) cho toàn bộ chuyên đề ' + level + '!' : 'Chuyên đề ' + level + ' đã được ghi nhận hoàn thành 100%!'))
+            : ('Cần đạt từ ' + (exam.passPct || 80) + '% trở lên (từ ' + Math.ceil(totalQs * 0.8) + '/' + totalQs + ' câu) để vượt cấp ' + level + '. Hãy xem giải thích chi tiết bên dưới rồi bấm Làm đề mới!')
+        ),
+        h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '4px' } },
+          h('button', {
+            type: 'button',
+            class: att.passed ? 'ghost' : 'primary',
+            style: { flex: 1 },
+            onclick: () => {
+              exam = buildShuffledHskExam(num, topics);
+              if (exam.usedTopics) exam.usedTopics.slice(0, 12).forEach((subT) => { try { preloadTopicAudio('zh', subT); } catch (e) {} });
+              totalSec = (exam.timeMin || 25) * 60;
+              remSec = totalSec;
+              paused = false;
+              userAns = {};
+              submitted = false;
+              currentAtt = null;
+              newlyUnlockedInfo = null;
+              startTimerLoop();
+              renderExamPage();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }, '🎲 Làm đề mới (xáo trộn)'),
+          h('button', { type: 'button', class: 'accent', style: { flex: 1 }, onclick: exit }, '← Quay lại')
+        )
+      );
+    }
+
+    const introNote = !submitted ? h('div', { class: 'panel', style: { padding: '10px 14px', background: 'rgba(15,82,87,.06)', border: '1px solid rgba(15,82,87,.22)', borderRadius: '12px', fontSize: '.84rem', lineHeight: 1.45 } },
+      h('b', {}, '📌 Đề thi vượt cấp ' + level + ' bám sát bài học: '),
+      exam.subtitle + ' · Thời gian làm bài ' + (exam.timeMin || 25) + ' phút. Chọn đáp án cho cả ' + totalQs + ' câu rồi bấm ',
+      h('b', {}, 'Nộp bài & Chấm điểm'),
+      '. Đạt từ ',
+      h('b', {}, (exam.passPct || 80) + '%'),
+      ' trở lên sẽ tự động vượt cấp và mở khóa toàn bộ chuyên đề ' + level + '!'
+    ) : null;
+
+    const sectionsWrap = h('div', { class: 'stack' });
+    const sectionDetailsEls = [];
+    (exam.sections || []).forEach((sec, secIdx) => {
+      const secQs = sec.questions || [];
+      const secDone = secQs.filter((q) => userAns[q.id] !== undefined).length;
+      const secOk = submitted ? secQs.filter((q) => userAns[q.id] === q.ans).length : 0;
+
+      const secBodyNodes = [];
+      if (sec.desc) secBodyNodes.push(h('p', { class: 'small muted', style: { margin: 0 } }, sec.desc));
+
+      secQs.forEach((q, qIdx) => {
+        const chosen = userAns[q.id];
+        const isCorrect = submitted && chosen === q.ans;
+        const isWrong = submitted && chosen !== q.ans;
+
+        const qCard = h('div', {
+          class: 'panel stack',
+          style: {
+            padding: '12px',
+            borderRadius: '12px',
+            gap: '8px',
+            background: 'var(--surface)',
+            border: submitted ? (isCorrect ? '1.5px solid var(--good)' : '1.5px solid var(--bad)') : '1px solid var(--line)'
+          }
+        },
+          h('div', { class: 'row between wrap', style: { gap: '6px', alignItems: 'center' } },
+            h('span', { class: 'chip small', style: { fontWeight: 700, background: 'var(--sunk)' } }, 'Câu ' + (qIdx + 1) + '/' + secQs.length),
+            q.audioText ? h('button', {
+              type: 'button',
+              class: 'ghost mini',
+              style: { fontSize: '.78rem', fontWeight: 700, border: '1px solid var(--teal)', color: 'var(--teal)' },
+              onclick: () => say('zh', q.audioText)
+            }, '🔊 Nghe audio') : null,
+            submitted ? h('span', { class: 'chip small ' + (isCorrect ? 'good' : 'warn'), style: { fontWeight: 700 } },
+              isCorrect ? '✓ Đúng' : (chosen === undefined ? '✗ Bỏ trống' : '✗ Sai')
+            ) : null
+          ),
+          q.passage ? h('div', { class: 'panel', lang: 'zh-Hans', style: { padding: '10px', background: 'var(--sunk)', borderRadius: '8px', whiteSpace: 'pre-line', lineHeight: 1.6, fontSize: '.92rem' } }, q.passage) : null,
+          h('div', { style: { fontWeight: 600, fontSize: '.94rem', lineHeight: 1.5, whiteSpace: 'pre-line' } }, q.prompt),
+          h('div', { class: 'stack', style: { gap: '6px' } },
+            ...(q.options || []).map((opt, oIdx) => {
+              const isSel = chosen === oIdx;
+              const isAns = oIdx === q.ans;
+              let bg = 'var(--sunk)';
+              let bd = '1px solid var(--line)';
+              if (submitted) {
+                if (isAns) { bg = 'rgba(35,120,74,.14)'; bd = '1.5px solid var(--good)'; }
+                else if (isSel && !isAns) { bg = 'rgba(220,38,38,.12)'; bd = '1.5px solid var(--bad)'; }
+              } else if (isSel) {
+                bg = 'rgba(15,82,87,.12)';
+                bd = '1.5px solid var(--teal)';
+              }
+              return h('button', {
+                type: 'button',
+                disabled: submitted,
+                style: {
+                  width: '100%', textAlign: 'left', padding: '9px 12px', borderRadius: '10px',
+                  background: bg, border: bd, color: 'var(--ink)', fontSize: '.88rem', lineHeight: 1.4,
+                  display: 'flex', alignItems: 'center', gap: '8px', cursor: submitted ? 'default' : 'pointer'
+                },
+                onclick: () => {
+                  if (submitted) return;
+                  userAns[q.id] = oIdx;
+                  renderExamPage();
+                }
+              },
+                h('span', { class: 'kbd', style: { flexShrink: 0, fontWeight: 700 } }, String.fromCharCode(65 + oIdx)),
+                h('span', { style: { flex: 1 } }, opt)
+              );
+            })
+          ),
+          submitted && q.explain ? h('div', { class: 'small', style: { padding: '8px 10px', background: 'var(--sunk)', borderRadius: '8px', lineHeight: 1.45, color: 'var(--ink)' } },
+            h('b', { style: { color: 'var(--teal)' } }, '💡 Giải thích: '),
+            q.explain
+          ) : null
+        );
+        secBodyNodes.push(qCard);
+      });
+
+      const accEl = accordionItem({
+        cls: 'acc-card',
+        open: secIdx === 0 || submitted,
+        iconEl: sec.short,
+        title: sec.title,
+        subtitle: secQs.length + ' câu hỏi',
+        chips: [h('span', { class: 'chip ' + (submitted ? (secOk === secQs.length ? 'good' : 'warn') : (secDone === secQs.length ? 'good' : '')) },
+          submitted ? (secOk + '/' + secQs.length + ' đúng') : (secDone + '/' + secQs.length)
+        )],
+        body: [h('div', { class: 'stack', style: { gap: '10px' } }, ...secBodyNodes)]
+      });
+
+      if (!submitted && secIdx < exam.sections.length - 1) {
+        const nextBtn = h('button', {
+          type: 'button',
+          class: 'ghost block',
+          style: { fontWeight: 700, marginTop: '4px', border: '1px solid var(--line)' },
+          onclick: () => {
+            accEl.open = false;
+            const nextSec = sectionDetailsEls[secIdx + 1];
+            if (nextSec) {
+              nextSec.open = true;
+              setTimeout(() => nextSec.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+            }
+          }
+        }, 'Chuyển sang Phần ' + (secIdx + 2) + ' →');
+        accEl.querySelector('.acc-body').append(nextBtn);
+      }
+
+      sectionDetailsEls.push(accEl);
+      sectionsWrap.append(accEl);
+    });
+
+    const toolbar = h('div', { class: 'acc-toolbar' },
+      h('span', { class: 'small muted', style: { fontWeight: 600 } }, '📋 ' + exam.sections.length + ' Phần thi ' + level + ' (' + totalQs + ' câu)'),
+      makeToggleAllBtn(() => sectionsWrap, 'details.acc-card', { labelOpen: '📖 Mở tất cả phần', labelClose: '📁 Thu gọn' })
+    );
+
+    submitHskFn = () => {
+      if (submitted) return;
+      stopExamLiveTimer();
+      stopSay();
+      const curQs = getAllQuestions();
+      const curTotal = curQs.length;
+      if (!curTotal) return;
+      let score = 0;
+      const secScores = (exam.sections || []).map((sec) => {
+        const qs = sec.questions || [];
+        const ok = qs.filter((q) => userAns[q.id] === q.ans).length;
+        score += ok;
+        return { id: sec.id, short: sec.short, ok: ok, tot: qs.length };
+      });
+      const pct = Math.round((score / curTotal) * 100);
+      const passed = pct >= (exam.passPct || 80);
+      const prev = S.hsk_attempts[level];
+      currentAtt = {
+        score: score,
+        total: curTotal,
+        pct: pct,
+        bestPct: Math.max(pct, (prev && (prev.bestPct || prev.pct)) || 0),
+        passed: passed || !!(prev && prev.passed),
+        submitted: true,
+        secScores: secScores,
+        spentSec: Math.max(1, totalSec - remSec)
+      };
+      S.hsk_attempts[level] = currentAtt;
+      if (passed && topics.length) {
+        newlyUnlockedInfo = unlockCategoryTopics('zh', topics, pct);
+      }
+      addXp(score * XP_ITEM, 'zh');
+      checkAch();
+      save();
+      submitted = true;
+      renderExamPage();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (passed) toast('🏆 Chúc mừng! Đạt ' + pct + '% — Vượt cấp ' + level + ' thành công!');
+    };
+
+    const submitPanel = !submitted ? h('div', { class: 'panel stack', style: { padding: '14px', borderRadius: '14px', gap: '8px', background: 'var(--surface)' } },
+      h('div', { class: 'small muted center' },
+        'Đã làm ' + answeredCount + '/' + totalQs + ' câu' + (answeredCount < totalQs ? ' (còn ' + (totalQs - answeredCount) + ' câu chưa chọn)' : ' · Sẵn sàng nộp bài!')
+      ),
+      h('button', {
+        type: 'button',
+        class: 'accent block',
+        style: { fontWeight: 800, fontSize: '1rem', padding: '14px' },
+        onclick: submitHskFn
+      }, '📝 Nộp bài & Chấm điểm ' + level)
+    ) : null;
+
+    mount(h('div', { class: 'stack-lg' }, topbar, resultBanner, introNote, toolbar, sectionsWrap, submitPanel));
+  }
+
+  renderExamPage();
+}
+
+function renderHskWrittenExamView() {
+  const lvNum = HSK_WRITTEN_LV || 1;
+  const info = HSK_WRITTEN_INFO[lvNum] || HSK_WRITTEN_INFO[1];
+  const level = 'HSK ' + lvNum;
+  const topics = getHskTopics(lvNum);
+  const vocabCount = topics.reduce((a, t) => a + (t.vocab || []).length, 0);
+  const att = S.hsk_attempts && S.hsk_attempts[level];
+
+  const header = h('div', { class: 'stack', style: { gap: '4px' } },
+    h('div', { class: 'row between', style: { alignItems: 'center' } },
+      h('p', { class: 'label', style: { margin: 0 } }, 'Phòng Luyện Thi Tiếng Trung (HSK · HSKK)'),
+      h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } },
+        feedbackBtn({ mode: 'exam_hsk' }),
+        langSwitch()
+      )
+    ),
+    h('h1', { style: { margin: 0 } }, 'Thi Vượt Cấp HSK (1–9)'),
+    renderHskModeSwitcher()
+  );
+
+  const lvSelector = h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap', margin: '4px 0 8px 0' } },
+    ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => h('button', {
+      class: 'filter-pill' + (lvNum === n ? ' active' : ''),
+      style: { minWidth: '58px' },
+      'aria-pressed': String(lvNum === n),
+      onclick: () => { HSK_WRITTEN_LV = n; examTabView(); }
+    }, 'HSK ' + n))
+  );
+
+  const mockTestCard = h('div', { class: 'panel card stack', style: { gap: '10px', background: 'var(--surface)', borderRadius: '12px' } },
+    h('div', { class: 'row between wrap', style: { alignItems: 'center', gap: '8px' } },
+      h('h2', { style: { margin: 0, fontSize: '1.1rem' } }, '🎯 Thi vượt cấp ' + level),
+      h('span', { class: 'chip ' + (att && att.passed ? 'good' : 'accent'), style: { fontSize: '.75rem' } },
+        att && att.submitted
+          ? (att.passed ? ('🏆 Đạt ' + (att.bestPct || att.pct) + '%') : ('Gần nhất: ' + att.pct + '%'))
+          : (topics.length + ' bài · ' + vocabCount + ' từ')
+      )
+    ),
+    h('button', {
+      class: 'primary block',
+      style: { fontWeight: 700, padding: '12px' },
+      onclick: () => startHskLevelExam(lvNum, { returnView: 'exam' })
+    }, '🎲 Làm đề xáo trộn ' + level + ' (20 câu)'),
+    h('p', { class: 'small muted', style: { margin: 0 } },
+      'Mỗi lần bấm thi sẽ tự động xáo trộn ngẫu nhiên 20 câu hỏi & đảo đáp án bám sát ' + topics.length + ' bài học ' + level + ' (Nghe hiểu 听力 · Từ vựng 词汇 · Ngữ pháp 语法 · Đọc hiểu 阅读). Đạt ≥ 80% tự động hoàn thành chuyên đề ' + level + '.'
+    )
+  );
+
+  const structureCard = h('div', { class: 'panel card stack', style: { gap: '10px', background: 'var(--surface)', borderRadius: '12px' } },
+    h('div', { class: 'row between', style: { alignItems: 'center' } },
+      h('h2', { style: { margin: 0, fontSize: '1.1rem' } }, '📋 Cấu trúc đề thi ' + info.level),
+      h('span', { class: 'chip good', style: { fontWeight: 700 } }, info.time)
+    ),
+    h('p', { class: 'small', style: { margin: 0 } }, info.desc),
+    h('div', { class: 'row between', style: { flexWrap: 'wrap', gap: '8px', background: 'var(--sunk)', padding: '10px 14px', borderRadius: '10px' } },
+      h('div', {}, h('p', { class: 'small muted', style: { margin: 0 } }, 'Đề chuẩn chính thức:'), h('b', {}, info.qs + ' câu')),
+      h('div', {}, h('p', { class: 'small muted', style: { margin: 0 } }, 'Tiêu chuẩn ĐẬU:'), h('b', { style: { color: 'var(--good)' } }, info.pass))
+    ),
+    h('div', { class: 'stack', style: { gap: '4px' } },
+      h('p', { class: 'label', style: { margin: 0 } }, '4 phần thi bám sát đề chuẩn & bài học:'),
+      ...info.parts.map((part) => h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } },
+        h('span', { style: { color: 'var(--teal)' } }, '✔'),
+        h('span', { class: 'small' }, part)
+      ))
+    )
+  );
+
+  mount(h('div', { class: 'stack' }, header, lvSelector, mockTestCard, structureCard));
 }
 
 // Chế độ thi thử Demo cho HSK / JLPT
