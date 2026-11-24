@@ -1,6 +1,6 @@
 # English Practice — Tiếng Anh thương mại & Quản lý
 
-> 🌐 **Link học trực tuyến chính thức:** **[https://nguyendang3103.github.io/english-practice/](https://nguyendang3103.github.io/english-practice/)**
+> 🌐 **Link học trực tuyến chính thức:** **[https://sallydnguyen.github.io/english-practice/](https://sallydnguyen.github.io/english-practice/)**
 >
 > *(Hỗ trợ đầy đủ âm thanh, nhận diện giọng nói chấm phát âm và điền từ email. Mở bằng Safari / Chrome trên điện thoại rồi chọn **"Thêm vào màn hình chính"** để dùng như App).*
 
