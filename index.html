@@ -1293,7 +1293,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/en.json và data/ielts_30day_listening.js,
    âm thanh thu sẵn nằm trong audio/ (audio/w*.json, audio/mail/, audio/listen/, audio/ielts/).
    ===================================================================== */
-const APP_BUILD_ID = '20261126-0041';
+const APP_BUILD_ID = '20261126-0330';
 const LANGS = {
   en: { label: 'English', vi: 'Tiếng Anh', short: 'Anh', folder: '', tts: 'en-US', rec: 'en-US', lang: 'en', cjk: false },
 };
@@ -3261,11 +3261,10 @@ let KNOWLEDGE_TAB = 'gram'; // 'gram' | 'chars' | 'kana'
 let EXAM_LV = { zh: 'HSK 1', ja: 'N5' };
 const TABS = [
   ['home', 'Trang chủ', ICON.home],
-  ['dictation', 'Dictation & Shadowing', ICON.book],
-  ['review', 'Từ vựng', ICON.book],
-  ['practice', 'Luyện tập', ICON.exam],
-  ['games', 'Trò chơi', ICON.home],
-  ['exam', 'Luyện thi', ICON.exam]
+  ['review', 'Từ vựng', ICON.cards],
+  ['practice', 'Luyện tập', ICON.skills],
+  ['exam', 'Luyện thi', ICON.exam],
+  ['progress', 'Tiến độ', ICON.chart]
 ];
 function setTabs(show) {
   const nav = document.getElementById('tabs'); nav.hidden = !show;
@@ -3282,9 +3281,9 @@ function setTabs(show) {
   });
   nav.replaceChildren(...tabsList.map(([k, label, d]) => {
     const isCur = (VIEW === k) ||
-      (k === 'home' && VIEW === 'home') ||
+      (k === 'home' && (VIEW === 'home' || VIEW === 'pick')) ||
       (k === 'review' && (VIEW === 'review' || VIEW === 'dict')) ||
-      (k === 'practice' && (VIEW === 'practice' || VIEW === 'news' || VIEW === 'knowledge' || VIEW === 'grammar')) ||
+      (k === 'practice' && (VIEW === 'practice' || VIEW === 'dictation' || VIEW === 'games' || VIEW === 'news' || VIEW === 'knowledge' || VIEW === 'grammar' || VIEW === 'kanji' || VIEW === 'skills' || VIEW === 'speak' || VIEW === 'write')) ||
       (k === 'exam' && (VIEW === 'exam' || VIEW === 'ielts'));
     return h('button', {
       'aria-current': isCur ? 'page' : null,
@@ -5537,7 +5536,7 @@ function dictView() {
 
   mount(h('div', { class: 'stack-lg', style: { gap: '10px' } },
     h('div', { class: 'row between wrap', style: { alignItems: 'center', gap: '6px' } },
-      h('button', { type: 'button', class: 'ghost mini', onclick: () => { setTabs(true); go('home'); } }, '← Trang chủ'),
+      h('button', { type: 'button', class: 'ghost mini', onclick: () => { setTabs(true); go('review'); } }, '← Từ vựng'),
       h('span', { class: 'chip good small' }, isOffline ? '⚡ Đang Offline · Sẵn sàng' : '📘 Cambridge Offline')
     ),
     h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } },
@@ -6481,6 +6480,10 @@ function newsView() {
   ];
 
   mount(h('div', { class: 'stack', style: { gap: '12px' } },
+    h('div', { class: 'row between', style: { alignItems: 'center' } },
+      h('button', { class: 'ghost mini', onclick: () => go('practice') }, '← Luyện tập'),
+      h('span', { class: 'chip' }, 'Reading Discussion')
+    ),
     h('div', { class: 'panel stack', style: { gap: '4px', padding: '14px' } },
       h('h2', { style: { margin: 0, fontSize: '1.2rem' } }, '📰 Đọc báo Song ngữ (Reading Discussion)'),
       h('p', { class: 'small muted', style: { margin: 0 } }, 'Chọn bài báo theo trình độ để đọc hiểu, tra nghĩa từng câu và làm quiz.')
@@ -6557,63 +6560,78 @@ function newsView() {
   ));
 }
 function dictationTabView() {
-  mount(h('div', { class: 'stack', style: { gap: '12px' } },
-    h('div', { class: 'panel stack', style: { gap: '4px', padding: '14px' } },
-      h('h2', { style: { margin: 0, fontSize: '1.2rem' } }, '🎧 Dictation & Shadowing'),
-      h('p', { class: 'small muted', style: { margin: 0 } }, 'Luyện nghe chép chính tả và nói đuổi theo giọng chuẩn người thật.')
-    ),
-    h('div', { class: 'acc-card' },
-      h('button', { class: 'acc-head', onclick: openDictationPractice },
-        h('div', { class: 'row', style: { gap: '10px', alignItems: 'center' } },
-          h('span', { style: { fontSize: '1.35rem' } }, '🎧'),
-          h('div', { class: 'stack', style: { gap: '2px', textAlign: 'left' } },
-            h('div', { style: { fontWeight: 700 } }, 'Dictation · Nghe chép chính tả'),
-            h('div', { class: 'small muted' }, 'Nghe từng câu chuẩn bản xứ, chép lại và đối chiếu từng từ.')
-          )
-        ),
-        h('span', { class: 'chip' }, 'Bắt đầu →')
-      )
-    ),
-    h('div', { class: 'acc-card' },
-      h('button', { class: 'acc-head', onclick: () => { SKILL_TAB = 'speak'; go('skills'); } },
-        h('div', { class: 'row', style: { gap: '10px', alignItems: 'center' } },
-          h('span', { style: { fontSize: '1.35rem' } }, '🗣️'),
-          h('div', { class: 'stack', style: { gap: '2px', textAlign: 'left' } },
-            h('div', { style: { fontWeight: 700 } }, 'Shadowing · Luyện nói đuổi'),
-            h('div', { class: 'small muted' }, 'Nghe câu mẫu, lặp lại theo nhịp và trọng âm để luyện phản xạ nói.')
-          )
-        ),
-        h('span', { class: 'chip' }, 'Bắt đầu →')
-      )
-    )
-  ));
+  go('practice');
 }
 
 function practiceTabView() {
-  const items = [
-    { icon: '🐞', title: 'Bug Hunter · Tìm lỗi ngữ pháp', desc: 'Nhận diện vị trí lỗi sai trong câu và chọn cách sửa đúng.', badge: 'Ngữ pháp', fn: openBugHunterPractice },
-    { icon: '🧩', title: 'Ghép câu · Cụm động từ (Phrasal Verbs)', desc: 'Chọn Động từ + Từ đi kèm để hoàn thành câu hoàn chỉnh.', badge: 'Cụm từ', fn: openSentenceBuilderPractice },
-    { icon: '📰', title: 'Đọc báo Song ngữ (Reading Discussion)', desc: 'Đọc bài báo theo cấp độ A1–B2, tra nghĩa và làm quiz.', badge: 'Đọc hiểu', fn: () => go('news') },
-    { icon: '📘', title: 'Ngữ pháp CEFR (A1–B2)', desc: 'Hệ thống lý thuyết ngữ pháp và bài tập trắc nghiệm theo cấp độ.', badge: 'CEFR', fn: () => go('grammar') }
+  const groups = [
+    {
+      iconEl: '🎧',
+      title: 'Nghe & Nói (Dictation · Shadowing)',
+      subtitle: 'Nghe chép chính tả giọng bản xứ và luyện nói đuổi theo nhịp điệu',
+      chip: '2 bài luyện',
+      defaultOpen: true,
+      items: [
+        { icon: '🎧', title: 'Dictation · Nghe chép chính tả', desc: 'Nghe từng câu chuẩn bản xứ, chép lại và đối chiếu từng từ.', badge: 'Nghe', fn: openDictationPractice },
+        { icon: '🗣️', title: 'Shadowing · Luyện nói đuổi', desc: 'Nghe câu mẫu, lặp lại theo nhịp và trọng âm để phản xạ tự nhiên.', badge: 'Nói', fn: () => { SKILL_TAB = 'speak'; go('skills'); } }
+      ]
+    },
+    {
+      iconEl: '📝',
+      title: 'Ngữ pháp & Cấu trúc câu',
+      subtitle: 'Săn lỗi ngữ pháp, ghép cụm động từ và hệ thống ngữ pháp A1–B2',
+      chip: '3 chuyên đề',
+      defaultOpen: false,
+      items: [
+        { icon: '🐞', title: 'Bug Hunter · Tìm lỗi ngữ pháp', desc: 'Nhận diện vị trí lỗi sai trong câu và chọn cách sửa đúng.', badge: 'Tìm lỗi', fn: openBugHunterPractice },
+        { icon: '🧩', title: 'Ghép câu · Cụm động từ (Phrasal Verbs)', desc: 'Chọn Động từ + Từ đi kèm để hoàn thành câu hoàn chỉnh.', badge: 'Cụm từ', fn: openSentenceBuilderPractice },
+        { icon: '📘', title: 'Ngữ pháp CEFR (A1–B2)', desc: 'Hệ thống lý thuyết ngữ pháp và bài tập trắc nghiệm theo cấp độ.', badge: 'CEFR', fn: () => go('grammar') }
+      ]
+    },
+    {
+      iconEl: '📰',
+      title: 'Đọc báo & Trò chơi',
+      subtitle: 'Đọc hiểu song ngữ theo cấp độ và trò chơi ghép cặp từ vựng',
+      chip: '2 hoạt động',
+      defaultOpen: false,
+      items: [
+        { icon: '📰', title: 'Đọc báo Song ngữ (Reading Discussion)', desc: 'Đọc bài báo theo cấp độ A1–B2, tra nghĩa và làm quiz.', badge: 'Đọc hiểu', fn: () => go('news') },
+        { icon: '🎮', title: 'Trò chơi · Ghép cặp Từ – Nghĩa', desc: 'Phản xạ nhanh ghép từ tiếng Anh với nghĩa tiếng Việt.', badge: 'Mini-game', fn: () => go('games') }
+      ]
+    }
   ];
-  mount(h('div', { class: 'stack', style: { gap: '12px' } },
-    h('div', { class: 'panel stack', style: { gap: '4px', padding: '14px' } },
-      h('h2', { style: { margin: 0, fontSize: '1.2rem' } }, '🏋️ Luyện tập tổng hợp'),
-      h('p', { class: 'small muted', style: { margin: 0 } }, 'Chọn kỹ năng bạn muốn rèn luyện thêm hôm nay.')
+
+  const wrap = h('div', { class: 'stack-lg', style: { gap: '12px' } },
+    h('div', { class: 'row between', style: { alignItems: 'center' } },
+      h('h1', { style: { margin: 0 } }, 'Luyện tập'),
+      feedbackBtn({ mode: 'practice' })
     ),
-    items.map((it) => h('div', { class: 'acc-card' },
-      h('button', { class: 'acc-head', onclick: it.fn },
-        h('div', { class: 'row', style: { gap: '10px', alignItems: 'center', flex: 1, minWidth: 0 } },
-          h('span', { style: { fontSize: '1.35rem' } }, it.icon),
-          h('div', { class: 'stack', style: { gap: '2px', textAlign: 'left', minWidth: 0 } },
-            h('div', { style: { fontWeight: 700, fontSize: '.96rem' } }, it.title),
-            h('div', { class: 'small muted' }, it.desc)
-          )
+    h('div', { class: 'acc-toolbar' },
+      h('span', { class: 'small muted', style: { fontWeight: 600 } }, '🎯 Chọn nhóm kỹ năng cần rèn luyện'),
+      makeToggleAllBtn(() => wrap, 'details.practice-acc')
+    ),
+    ...groups.map((grp) => accordionItem({
+      cls: 'acc-card practice-acc',
+      iconEl: grp.iconEl,
+      title: grp.title,
+      subtitle: grp.subtitle,
+      defaultOpen: grp.defaultOpen,
+      chips: [h('span', { class: 'chip small' }, grp.chip)],
+      body: grp.items.map((it) => h('button', {
+        class: 'lesson',
+        style: { marginTop: '6px' },
+        onclick: it.fn
+      },
+        h('span', { style: { fontSize: '1.25rem', flexShrink: 0 } }, it.icon),
+        h('div', { class: 'meta' },
+          h('b', { style: { display: 'block', fontSize: '.94rem' } }, it.title),
+          h('span', { class: 'small muted' }, it.desc)
         ),
-        h('span', { class: 'chip' }, it.badge)
-      )
-    ))
-  ));
+        h('span', { class: 'chip small' }, it.badge)
+      ))
+    }))
+  );
+  mount(wrap);
 }
 
 function gamesTabView() {
@@ -6631,12 +6649,13 @@ function gamesTabView() {
 
   function renderGame() {
     mount(h('div', { class: 'stack', style: { gap: '12px' } },
-      h('div', { class: 'panel row between', style: { padding: '14px', alignItems: 'center' } },
-        h('div', { class: 'stack', style: { gap: '2px' } },
-          h('h2', { style: { margin: 0, fontSize: '1.2rem' } }, '🎮 Trò chơi · Ghép cặp Từ – Nghĩa'),
-          h('p', { class: 'small muted', style: { margin: 0 } }, `Đã ghép: ${matched.size}/${PAIRS.length} cặp`)
-        ),
+      h('div', { class: 'row between', style: { alignItems: 'center' } },
+        h('button', { class: 'ghost mini', onclick: () => go('practice') }, '← Luyện tập'),
         h('button', { class: 'ghost mini', onclick: () => { matched.clear(); selEn = null; selVi = null; renderGame(); } }, 'Chơi lại')
+      ),
+      h('div', { class: 'panel stack', style: { padding: '14px', gap: '2px' } },
+        h('h2', { style: { margin: 0, fontSize: '1.2rem' } }, '🎮 Trò chơi · Ghép cặp Từ – Nghĩa'),
+        h('p', { class: 'small muted', style: { margin: 0 } }, `Đã ghép: ${matched.size}/${PAIRS.length} cặp`)
       ),
       matched.size === PAIRS.length
         ? h('div', { class: 'panel stack center', style: { padding: '20px', gap: '8px', background: 'rgba(16,185,129,0.1)' } },
@@ -6784,229 +6803,178 @@ function homeView() {
     )
   ) : null;
 
+  const ob = S.onboarding;
+  const g = goal(S.lang, todayN());
+  const sch = getDaySchedule(todayN());
+  const isFocus = sch.focus === S.lang;
+  const doneRev = getReviewedToday(S.lang, todayN());
+  const rawVault = rawDueIn(S.lang);
+  const p = getLangProgress(S.lang);
+  const estCur = calcFinishEstimate(p.curCatRemainingTopics, p.curCatRemainingLessons, STUDY_PACE, S.lang);
+  const goalNames = { comm30: 'Giao tiếp cấp tốc', work: 'Công việc', ielts: 'Luyện thi IELTS', foundation: 'Học từ nền tảng' };
+
+  if ((!ob || !ob.done) && !ONBOARDING_SHOWN_SESSION) {
+    ONBOARDING_SHOWN_SESSION = true;
+    requestAnimationFrame(() => openOnboardingModal(false));
+  }
+
+  const todayCard = h('div', { class: 'panel stack', style: { gap: '10px' } },
+    h('div', { class: 'row between small', style: { alignItems: 'center', gap: '6px' } },
+      h('span', {},
+        isFocus
+          ? h('span', { class: 'chip accent', style: { fontSize: '.72rem', marginRight: '6px' } }, '🎯 Trọng tâm')
+          : sch.focus === 'all'
+          ? h('span', { class: 'chip good', style: { fontSize: '.72rem', marginRight: '6px' } }, '🧘 Chủ Nhật')
+          : h('span', { class: 'chip', style: { fontSize: '.72rem', marginRight: '6px' } }, '⚡ Duy trì'),
+        h('span', { style: { fontWeight: 600 } }, xp >= g ? 'Đã đạt mục tiêu hôm nay' : 'Học hôm nay')
+      ),
+      h('span', { class: 'muted', style: { fontWeight: 600 } }, xp + '/' + g + ' phút')
+    ),
+    h('div', { class: 'bar', role: 'progressbar', 'aria-label': 'Mục tiêu hôm nay', 'aria-valuenow': xp, 'aria-valuemax': g }, gf),
+    h('div', { class: 'stats' },
+      h('div', { class: 'stat' }, h('b', {}, st), h('span', {}, 'ngày liên tục')),
+      h('div', { class: 'stat' }, h('b', {}, xp + 'p'), h('span', {}, 'phút hôm nay')),
+      h('div', { class: 'stat' }, h('b', {}, due), h('span', {}, 'từ cần ôn'))
+    ),
+    nx ? h('button', { class: 'primary block', onclick: () => lessonView(nx.t, nx.i) },
+      h('span', {}, '▶ Học tiếp: ', h('b', {}, nx.t.sub || nx.t.title)))
+      : h('p', { class: 'muted center small' }, curCat !== 'all' ? 'Bạn đã học hết các bài trong cấp độ này.' : 'Bạn đã học hết lộ trình.'),
+    due > 0 ? h('button', {
+      class: 'accent block',
+      onclick: () => { REVIEW_SKILL = 'vocab'; go('review'); }
+    }, '🔄 Ôn tập ngay: Còn ' + due + ' từ' + (doneRev > 0 ? ' (đã ôn ' + doneRev + ')' : ''))
+      : (doneRev > 0 || rawVault > 0 ? h('button', {
+          class: 'ghost mini block',
+          style: { color: 'var(--muted)' },
+          onclick: () => { REVIEW_SKILL = 'vocab'; go('review'); }
+        }, doneRev > 0 ? ('✓ Đã ôn ' + doneRev + ' từ hôm nay · Vào kho từ vựng') : ('📦 Kho chờ ' + rawVault + ' từ · Vào kho từ vựng')) : null)
+  );
+
+  const catExamCard = (() => {
+    if (curCat === 'all' || !filteredTopics.length) return null;
+    const catDoneTopics = filteredTopics.filter((t) => topicDone(t)).length;
+    const lvLabel = curCatObj.level || curCatObj.short;
+    if (catDoneTopics >= filteredTopics.length) return null;
+    return h('div', {
+      class: 'panel row between',
+      style: {
+        padding: '10px 14px',
+        background: 'rgba(180,83,9,.06)',
+        border: '1px solid rgba(180,83,9,.28)',
+        borderRadius: '12px',
+        alignItems: 'center',
+        gap: '10px',
+        flexWrap: 'wrap'
+      }
+    },
+      h('div', { style: { flex: '1 1 200px', minWidth: 0 } },
+        h('div', { style: { fontSize: '.88rem', fontWeight: 700, color: 'var(--amber)' } },
+          '🚀 Kiểm tra vượt cấp ' + lvLabel + ' (' + catDoneTopics + '/' + filteredTopics.length + ' bài)'
+        ),
+        h('div', { class: 'small muted', style: { fontSize: '.76rem', marginTop: '2px' } },
+          'Đạt ≥ 80% để pass & hoàn thành 100% chuyên đề ' + curCatObj.name
+        )
+      ),
+      h('button', {
+        class: 'accent mini',
+        style: { whiteSpace: 'nowrap', padding: '7px 12px', fontSize: '.82rem', fontWeight: 700, flexShrink: 0 },
+        onclick: () => startCategoryExam(S.lang, curCatObj, filteredTopics)
+      }, 'Thi vượt cấp →')
+    );
+  })();
+
+  const topicsNode = (() => {
+    if (phases.length <= 1) {
+      return h('div', { class: 'stack' },
+        ...phases.map((ph) => h('div', { class: 'stack' },
+          ph.name && h('p', { class: 'label phase' }, cleanPhaseName(ph.name)),
+          ...ph.topics.map((t) => topicCard(t, nx, curCat === 'all' ? t.pos : (t.catPos || (filteredTopics.indexOf(t) + 1)))))));
+    }
+    const wrap = h('div', { class: 'stack', style: { gap: '10px' } });
+    wrap.append(h('div', { class: 'acc-toolbar' },
+      h('span', { class: 'small muted', style: { fontWeight: 600 } }, '📚 ' + phases.length + ' nhóm chuyên đề · ' + filteredTopics.length + ' bài'),
+      makeToggleAllBtn(() => wrap, 'details.phase-acc')
+    ));
+    phases.forEach((ph, phIdx) => {
+      const pTitle = ph.name ? cleanPhaseName(ph.name) : ('Nhóm ' + (phIdx + 1));
+      const pKey = S.lang + ':' + curCat + ':' + pTitle;
+      const doneTopics = ph.topics.filter((t) => t.lessons.every((_, i) => lessonDone(t, i))).length;
+      const hasNx = !!(nx && ph.topics.includes(nx.t));
+      const isComplete = doneTopics === ph.topics.length && ph.topics.length > 0;
+      const defOpen = hasNx || (!nx && phIdx === 0);
+      const isOpen = openPhases.has(pKey) || (defOpen && !closedPhases.has(pKey));
+      const subText = isComplete
+        ? '✓ Đã hoàn thành tất cả bài trong nhóm'
+        : (hasNx ? ('▶ Đang học: ' + (nx.t.sub || nx.t.title)) : ((ph.topics[0] && (ph.topics[0].sub || ph.topics[0].title)) + (ph.topics.length > 1 ? ' …' : '')));
+      wrap.append(accordionItem({
+        cls: 'acc-group phase-acc',
+        border: hasNx ? '1.5px solid var(--teal)' : null,
+        defaultOpen: isOpen,
+        onToggle: (on) => {
+          if (on) { openPhases.add(pKey); closedPhases.delete(pKey); }
+          else { openPhases.delete(pKey); closedPhases.add(pKey); }
+        },
+        iconEl: hasNx ? '🎯' : (isComplete ? '✅' : '📂'),
+        title: pTitle,
+        subtitle: subText,
+        chips: [h('span', { class: 'chip' + (isComplete ? ' good' : ''), style: { fontSize: '.74rem', fontWeight: 700 } }, doneTopics + '/' + ph.topics.length + ' bài')],
+        body: ph.topics.map((t) => topicCard(t, nx, curCat === 'all' ? t.pos : (t.catPos || (filteredTopics.indexOf(t) + 1))))
+      }));
+    });
+    return wrap;
+  })();
+
+  const c30Node = S.lang === 'en' ? crash30HomeSection(d) : null;
+  const preferC30Top = CRASH30_OPEN || (ob && ob.goalType === 'comm30');
+
+  const metaFooterCard = h('div', { class: 'panel stack', style: { gap: '8px', padding: '12px 14px' } },
+    h('div', {
+      class: 'row between',
+      style: { cursor: 'pointer', alignItems: 'center', gap: '8px' },
+      onclick: () => { ROADMAP_LANG = S.lang; PICK_TAB = 'roadmap'; PICK_HUB_OPEN = true; go('pick'); }
+    },
+      h('div', { style: { minWidth: 0 } },
+        h('div', { style: { fontSize: '.86rem', fontWeight: 600 } },
+          '🚀 Lộ trình ' + LANGS[S.lang].short + ': ' + p.totalTopicsDone + '/' + p.totalAllTopics + ' bài (' + p.pct + '%)'
+        ),
+        h('div', { class: 'small muted', style: { fontSize: '.76rem' } },
+          p.remainingTopics === 0 ? '🎉 Đã hoàn thành toàn bộ khóa học!' : ('Dự kiến xong ' + (p.curCat.level || p.curCat.short) + ': ' + estCur.timeText)
+        )
+      ),
+      h('span', { class: 'small', style: { color: 'var(--teal)', fontWeight: 600, whiteSpace: 'nowrap' } }, 'Xem lộ trình →')
+    ),
+    h('div', { style: { height: '1px', background: 'var(--line)' } }),
+    h('div', { class: 'row between', style: { alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
+      ob && ob.done
+        ? h('span', { class: 'small muted' }, `🎯 ${goalNames[ob.goalType] || 'Mục tiêu'} · ${ob.dailyMinutes || S.goal} phút/ngày (${(ob.level || 'a1').toUpperCase()})`)
+        : h('span', { class: 'small muted' }, '✨ Xác định trình độ & mục tiêu học'),
+      h('button', {
+        class: 'ghost mini',
+        style: { whiteSpace: 'nowrap', padding: '4px 10px', fontSize: '.76rem', fontWeight: 600 },
+        onclick: () => openOnboardingModal(true)
+      }, ob && ob.done ? 'Làm lại khảo sát' : 'Bắt đầu khảo sát →')
+    )
+  );
+
   mount(h('div', { class: 'stack-lg' },
-    h('div', { class: 'row between', style: { alignItems: 'center' } },
-      h('h1', { style: { margin: 0 } }, 'Chào ' + S.name + '!'),
-      h('div', { class: 'row', style: { gap: '8px', alignItems: 'center' } },
-        dictBtn(),
+    h('div', { class: 'row between', style: { alignItems: 'center', gap: '8px' } },
+      h('div', { class: 'row', style: { gap: '8px', alignItems: 'center', minWidth: 0 } },
+        h('h1', { style: { margin: 0 } }, 'Chào ' + S.name + '!'),
+        ob && ob.done ? h('span', { class: 'chip level ' + (ob.level || 'a1') }, (ob.level || 'a1').toUpperCase()) : null
+      ),
+      h('div', { class: 'row', style: { gap: '6px', alignItems: 'center', flexShrink: 0 } },
         feedbackBtn(),
-        syncButton(),
         langSwitch()
       )
     ),
-    h('div', { class: 'stats' },
-      h('div', { class: 'stat' }, h('b', {}, st), h('span', {}, 'ngày đạt mục tiêu')),
-      h('div', { class: 'stat' }, h('b', {}, xp), h('span', {}, 'XP hôm nay')),
-      h('div', { class: 'stat' }, h('b', {}, due), h('span', {}, 'từ ôn hôm nay'))),
-    (() => {
-      const g = goal(S.lang, todayN());
-      const sch = getDaySchedule(todayN());
-      const isFocus = sch.focus === S.lang;
-      const doneRev = getReviewedToday(S.lang, todayN());
-      const quotaRev = getDailyReviewQuota(S.lang, todayN());
-      const rawVault = rawDueIn(S.lang);
-      return h('div', { class: 'panel stack' },
-        h('div', { class: 'row between small', style: { alignItems: 'center', gap: '6px' } },
-          h('span', {},
-            isFocus
-              ? h('span', { class: 'chip accent', style: { fontSize: '.72rem', marginRight: '6px' } }, '🎯 Trọng tâm')
-              : sch.focus === 'all'
-              ? h('span', { class: 'chip good', style: { fontSize: '.72rem', marginRight: '6px' } }, '🧘 Chủ Nhật')
-              : h('span', { class: 'chip', style: { fontSize: '.72rem', marginRight: '6px' } }, '⚡ Duy trì'),
-            h('span', {}, xp >= g ? 'Đã đạt mục tiêu hôm nay' : 'Mục tiêu hôm nay')
-          ),
-          h('span', { class: 'muted' }, xp + '/' + g + ' XP')
-        ),
-        h('div', { class: 'bar', role: 'progressbar', 'aria-label': 'Mục tiêu hôm nay', 'aria-valuenow': xp, 'aria-valuemax': g }, gf),
-        h('button', {
-          class: (due > 0 ? 'accent' : 'ghost mini') + ' block',
-          style: due > 0 ? {} : { padding: '6px 12px', fontSize: '.84rem', color: 'var(--muted)', margin: '4px 0' },
-          onclick: () => { REVIEW_SKILL = 'vocab'; go('review'); }
-        }, due > 0
-          ? ('🔄 Ôn tập hôm nay: Còn ' + due + ' từ' + (doneRev > 0 ? ' · Đã học/ôn ' + doneRev + ' mục' : '') + (rawVault > due ? ' (Kho chờ: ' + rawVault + ' từ)' : ''))
-          : (doneRev > 0
-              ? ('✓ Đã học/ôn hôm nay: ' + doneRev + ' mục' + (rawVault > 0 ? ' · Bấm nếu muốn ôn thêm' : ''))
-              : '🔄 Ôn tập từ mới (Chưa có từ đến hạn hôm nay)')),
-        nx ? h('button', { class: (due ? '' : 'primary ') + 'block', onclick: () => lessonView(nx.t, nx.i) },
-          h('span', {}, 'Học tiếp: ', h('b', {}, nx.t.sub || nx.t.title)))
-          : h('p', { class: 'muted center' }, curCat !== 'all' ? 'Bạn đã học hết các bài trong chủ đề này. Hãy chọn chủ đề khác hoặc ôn tập.' : 'Bạn đã học hết lộ trình. Hãy ôn tập và luyện nói để nhớ lâu.')
-      );
-    })(),
-    (() => {
-      const p = getLangProgress(S.lang);
-      const estCur = calcFinishEstimate(p.curCatRemainingTopics, p.curCatRemainingLessons, STUDY_PACE, S.lang);
-      return h('div', {
-        class: 'panel',
-        style: {
-          padding: '10px 14px',
-          background: 'rgba(15,82,87,.05)',
-          border: '1px solid rgba(15,82,87,.15)',
-          borderRadius: '12px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '8px',
-          cursor: 'pointer',
-          margin: '4px 0'
-        },
-        onclick: () => { ROADMAP_LANG = S.lang; PICK_TAB = 'roadmap'; PICK_HUB_OPEN = true; go('pick'); }
-      },
-        h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 } },
-          h('span', { style: { fontSize: '1.2rem', flexShrink: 0 } }, '🚀'),
-          h('div', { style: { minWidth: 0 } },
-            h('div', { style: { fontSize: '.86rem', fontWeight: 600 } },
-              'Lộ trình ' + LANGS[S.lang].short + ': ' + p.totalTopicsDone + '/' + p.totalAllTopics + ' bài (' + p.pct + '%)'
-            ),
-            h('div', { class: 'small muted', style: { fontSize: '.76rem' } },
-              p.remainingTopics === 0 ? '🎉 Đã hoàn thành toàn bộ khóa học!' : ('Dự kiến xong ' + (p.curCat.level || p.curCat.short) + ': ' + estCur.timeText)
-            )
-          )
-        ),
-        h('button', {
-          class: 'ghost mini',
-          style: { whiteSpace: 'nowrap', padding: '4px 10px', fontSize: '.76rem', fontWeight: 600, flexShrink: 0 }
-        }, 'Xem lộ trình →')
-      );
-    })(),
-    (() => {
-      if ((!S.onboarding || !S.onboarding.done) && !ONBOARDING_SHOWN_SESSION) {
-        ONBOARDING_SHOWN_SESSION = true;
-        requestAnimationFrame(() => openOnboardingModal(false));
-      }
-      const ob = S.onboarding;
-      const goalNames = { comm30: 'Giao tiếp cấp tốc', work: 'Công việc', ielts: 'Luyện thi IELTS', foundation: 'Học từ nền tảng' };
-      return h('div', {
-        class: 'panel row between',
-        style: { padding: '8px 12px', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }
-      },
-        ob && ob.done
-          ? h('div', { class: 'row', style: { gap: '8px', alignItems: 'center', flexWrap: 'wrap' } },
-              h('span', { class: 'small', style: { fontWeight: 600 } },
-                `🎯 ${goalNames[ob.goalType] || 'Lộ trình'} · ${ob.dailyMinutes || S.goal} phút/ngày`
-              ),
-              h('span', { class: 'chip level ' + (ob.level || 'a1') }, (ob.level || 'a1').toUpperCase())
-            )
-          : h('span', { class: 'small muted' }, '✨ Xác định trình độ & mục tiêu học trong 1 phút'),
-        h('button', {
-          class: 'ghost mini',
-          style: { whiteSpace: 'nowrap', padding: '4px 10px', fontSize: '.76rem', fontWeight: 600 },
-          onclick: () => openOnboardingModal(true)
-        }, ob && ob.done ? 'Làm lại khảo sát' : 'Bắt đầu khảo sát →')
-      );
-    })(),
-    h('div', { class: 'row', style: { gap: '8px' } },
-      h('button', {
-        class: 'panel row',
-        style: { flex: 1, padding: '10px 12px', gap: '8px', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontWeight: 700, fontSize: '.86rem' },
-        onclick: openDictationPractice
-      }, '🎧 Dictation (Chép chính tả)'),
-      h('button', {
-        class: 'panel row',
-        style: { flex: 1, padding: '10px 12px', gap: '8px', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontWeight: 700, fontSize: '.86rem' },
-        onclick: openBugHunterPractice
-      }, '🐞 Bug Hunter (Tìm lỗi)'),
-      h('button', {
-        class: 'panel row',
-        style: { flex: 1, padding: '10px 12px', gap: '8px', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontWeight: 700, fontSize: '.86rem' },
-        onclick: openSentenceBuilderPractice
-      }, '🧩 Ghép câu'),
-      h('button', {
-        class: 'panel row',
-        style: { flex: 1, padding: '10px 12px', gap: '8px', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontWeight: 700, fontSize: '.86rem' },
-        onclick: openFlashcardPractice
-      }, '🃏 Flashcard')
-    ),
-    S.lang === 'en' ? crash30HomeSection(d) : null,
+    todayCard,
+    preferC30Top ? c30Node : null,
     catBar,
-    (() => {
-      if (curCat === 'all' || !filteredTopics.length) return null;
-      const catDoneTopics = filteredTopics.filter((t) => topicDone(t)).length;
-      const isJa = S.lang === 'ja';
-      const lvLabel = curCatObj.level || curCatObj.short;
-      if (!isJa && catDoneTopics >= filteredTopics.length) return null;
-      const allDone = catDoneTopics >= filteredTopics.length;
-      return h('div', {
-        class: 'panel row between',
-        style: {
-          padding: '10px 14px',
-          background: allDone ? 'rgba(35,120,74,.08)' : 'rgba(180,83,9,.06)',
-          border: allDone ? '1px solid rgba(35,120,74,.32)' : '1px solid rgba(180,83,9,.28)',
-          borderRadius: '12px',
-          alignItems: 'center',
-          gap: '10px',
-          flexWrap: 'wrap'
-        }
-      },
-        h('div', { style: { flex: '1 1 200px', minWidth: 0 } },
-          h('div', { style: { fontSize: '.88rem', fontWeight: 700, color: allDone ? 'var(--good)' : 'var(--amber)' } },
-            isJa
-              ? (allDone ? '🏆 Đã vượt cấp JLPT ' : '🚀 Đề thi vượt cấp JLPT ') + lvLabel + ' (' + catDoneTopics + '/' + filteredTopics.length + ' chủ đề)'
-              : (S.lang === 'zh'
-                ? (allDone ? '🏆 Đã vượt cấp ' : '🚀 Đề thi vượt cấp ') + lvLabel + ' (' + catDoneTopics + '/' + filteredTopics.length + ' chủ đề)'
-                : '🚀 Kiểm tra vượt cấp ' + lvLabel + ' (' + catDoneTopics + '/' + filteredTopics.length + ' chủ đề)')
-          ),
-          h('div', { class: 'small muted', style: { fontSize: '.76rem', marginTop: '2px' } },
-            isJa
-              ? (allDone
-                ? 'Bạn đã hoàn thành 100% chuyên đề ' + lvLabel + '. Có thể làm lại đề thi chuẩn JLPT ' + lvLabel + ' bất cứ lúc nào.'
-                : 'Làm đề thi chuẩn JLPT ' + lvLabel + ' độc lập (Kanji · Từ vựng · Ngữ pháp ★ · Đọc hiểu · Nghe hiểu). Đạt ≥ 80% để hoàn thành 100% cả chuyên đề!')
-              : (S.lang === 'zh'
-                ? (allDone
-                  ? 'Bạn đã hoàn thành 100% chuyên đề ' + lvLabel + '. Có thể làm lại đề thi xáo trộn chuẩn ' + lvLabel + ' bất cứ lúc nào.'
-                  : 'Làm đề thi chuẩn ' + lvLabel + ' bám sát bài học (Nghe hiểu 听力 · Từ vựng 词汇 · Ngữ pháp 语法 · Đọc hiểu 阅读). Đạt ≥ 80% để hoàn thành 100% cả chuyên đề!')
-                : 'Làm bài tổng hợp đạt ≥ 80% để pass & hoàn thành 100% cả chuyên đề ' + curCatObj.name)
-          )
-        ),
-        h('button', {
-          class: (allDone ? 'primary' : 'accent') + ' mini',
-          style: { whiteSpace: 'nowrap', padding: '7px 12px', fontSize: '.82rem', fontWeight: 700, flexShrink: 0 },
-          onclick: () => startCategoryExam(S.lang, curCatObj, filteredTopics)
-        }, isJa
-          ? (allDone ? 'Làm lại đề JLPT ' + lvLabel : 'Thi vượt cấp JLPT ' + lvLabel + ' →')
-          : (S.lang === 'zh' ? (allDone ? 'Làm lại đề ' + lvLabel : 'Thi vượt cấp ' + lvLabel + ' →') : 'Thi vượt cấp →'))
-      );
-    })(),
-    (() => {
-      if (phases.length <= 1) {
-        return h('div', { class: 'stack' },
-          ...phases.map((ph) => h('div', { class: 'stack' },
-            ph.name && h('p', { class: 'label phase' }, cleanPhaseName(ph.name)),
-            ...ph.topics.map((t) => topicCard(t, nx, curCat === 'all' ? t.pos : (t.catPos || (filteredTopics.indexOf(t) + 1)))))));
-      }
-      const wrap = h('div', { class: 'stack', style: { gap: '10px' } });
-      wrap.append(h('div', { class: 'acc-toolbar' },
-        h('span', { class: 'small muted', style: { fontWeight: 600 } }, '📚 ' + phases.length + ' nhóm chuyên đề · ' + filteredTopics.length + ' bài'),
-        makeToggleAllBtn(() => wrap, 'details.phase-acc')
-      ));
-      phases.forEach((ph, phIdx) => {
-        const pTitle = ph.name ? cleanPhaseName(ph.name) : ('Nhóm ' + (phIdx + 1));
-        const pKey = S.lang + ':' + curCat + ':' + pTitle;
-        const doneTopics = ph.topics.filter((t) => t.lessons.every((_, i) => lessonDone(t, i))).length;
-        const hasNx = !!(nx && ph.topics.includes(nx.t));
-        const isComplete = doneTopics === ph.topics.length && ph.topics.length > 0;
-        const defOpen = hasNx || (!nx && phIdx === 0);
-        const isOpen = openPhases.has(pKey) || (defOpen && !closedPhases.has(pKey));
-        const subText = isComplete
-          ? '✓ Đã hoàn thành tất cả bài trong nhóm'
-          : (hasNx ? ('▶ Đang học: ' + (nx.t.sub || nx.t.title)) : ((ph.topics[0] && (ph.topics[0].sub || ph.topics[0].title)) + (ph.topics.length > 1 ? ' …' : '')));
-        wrap.append(accordionItem({
-          cls: 'acc-group phase-acc',
-          border: hasNx ? '1.5px solid var(--teal)' : null,
-          defaultOpen: isOpen,
-          onToggle: (on) => {
-            if (on) { openPhases.add(pKey); closedPhases.delete(pKey); }
-            else { openPhases.delete(pKey); closedPhases.add(pKey); }
-          },
-          iconEl: hasNx ? '🎯' : (isComplete ? '✅' : '📂'),
-          title: pTitle,
-          subtitle: subText,
-          chips: [h('span', { class: 'chip' + (isComplete ? ' good' : ''), style: { fontSize: '.74rem', fontWeight: 700 } }, doneTopics + '/' + ph.topics.length + ' bài')],
-          body: ph.topics.map((t) => topicCard(t, nx, curCat === 'all' ? t.pos : (t.catPos || (filteredTopics.indexOf(t) + 1))))
-        }));
-      });
-      return wrap;
-    })(),
-    h('p', { class: 'small muted center', style: { margin: '24px 0 12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.00 · Cập nhật 18/11/2026')));
+    topicsNode,
+    !preferC30Top ? c30Node : null,
+    catExamCard,
+    metaFooterCard,
+    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.02 · Học theo thời gian thực')));
 }
 
 // ===== HỆ THỐNG LUYỆN THI IELTS 4 KỸ NĂNG (TIẾNG ANH) =====
@@ -15315,12 +15283,25 @@ function reviewView(forceExtra = false) {
     [15, '🔥 15 từ (~6p · Chuyên sâu)']
   ];
 
-  const head = (isReviewing = false) => h('div', { class: 'row between wrap', style: { alignItems: 'center', gap: '6px' } },
-    h('button', { class: 'ghost mini', style: { whiteSpace: 'nowrap', flexShrink: 0, padding: '6px 8px', fontSize: '.84rem' }, onclick: () => go('home') }, '← Về trang Học'),
-    isReviewing ? h('span', { class: 'label', style: { margin: 0, whiteSpace: 'nowrap' } }, 'Ôn tập FSRS') : null,
-    h('div', { class: 'row', style: { gap: '6px', alignItems: 'center', flexShrink: 0 } },
-      feedbackBtn({ mode: 'review_vocab' }),
-      langSwitch()
+  const head = (isReviewing = false) => h('div', { class: 'stack', style: { gap: '8px' } },
+    h('div', { class: 'row between wrap', style: { alignItems: 'center', gap: '6px' } },
+      h('h1', { style: { margin: 0, fontSize: '1.35rem' } }, isReviewing ? 'Từ vựng · Ôn FSRS' : 'Từ vựng'),
+      h('div', { class: 'row', style: { gap: '6px', alignItems: 'center', flexShrink: 0 } },
+        feedbackBtn({ mode: 'review_vocab' }),
+        langSwitch()
+      )
+    ),
+    h('div', { class: 'row', style: { gap: '8px' } },
+      h('button', {
+        class: 'panel row',
+        style: { flex: 1, padding: '8px 10px', gap: '6px', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '.84rem', minHeight: '40px' },
+        onclick: openFlashcardPractice
+      }, '🃏 Flashcard 3D'),
+      h('button', {
+        class: 'panel row',
+        style: { flex: 1, padding: '8px 10px', gap: '6px', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '.84rem', minHeight: '40px' },
+        onclick: () => go('dict')
+      }, '📖 Từ điển')
     )
   );
 
@@ -15357,7 +15338,7 @@ function reviewView(forceExtra = false) {
         h('h2', {}, totalVaultDue === 0 ? '🎉 Đã ôn sạch kho từ đến hạn!' : '🎉 Đã hoàn thành định mức ôn hôm nay!'),
         h('p', { class: 'muted center', style: { margin: 0, lineHeight: 1.5 } },
           totalVaultDue === 0
-            ? 'Bạn đã hoàn thành toàn bộ các từ vựng đến hạn. Hãy học thêm bài mới để tiếp tục lộ trình!'
+            ? 'Bạn đã hoàn thành toàn bộ các từ vựng đến hạn. Hãy mở Flashcard 3D hoặc Từ điển bên trên, hoặc học bài mới!'
             : ('Hôm nay bạn đã ôn đủ ' + doneBefore + '/' + dailyQuota + ' từ chuẩn khoa học. Còn ' + totalVaultDue + ' từ trong kho được hệ thống tự bảo lưu sang các ngày tới để tránh quá tải.')
         ),
         totalVaultDue > 0 ? h('button', {
@@ -15366,7 +15347,7 @@ function reviewView(forceExtra = false) {
           onclick: () => reviewView(true)
         }, '🔄 Tôi muốn ôn thêm 1 gói ' + Math.min(REVIEW_BATCH_SIZE, totalVaultDue) + ' từ nữa (Tự chọn)') : null,
         h('div', { class: 'row center wrap', style: { gap: '8px', marginTop: '8px' } },
-          h('button', { class: 'primary', onclick: () => go('home') }, 'Về trang Học'),
+          h('button', { class: 'primary', onclick: () => go('home') }, 'Về Trang chủ'),
           h('button', { class: 'ghost', onclick: () => { PICK_TAB = 'roadmap'; PICK_HUB_OPEN = true; go('pick'); } }, '🗺️ Xem lộ trình')
         )
       ),
@@ -22823,8 +22804,8 @@ function progressView() {
       h('span', { class: 'small muted' }, keys.length + ' mục đang ôn · ' + keys.filter((k) => S.srs[k].b >= 3).length + ' đã nhớ chắc'),
       h('span', { class: 'small muted' }, Object.keys(S.written).filter((k) => k.startsWith(c + ':')).length ? Object.keys(S.written).filter((k) => k.startsWith(c + ':')).length + ' chữ đã viết' : ''));
   });
-  const goalSel = h('select', { id: 'goal', onchange: (e) => { S.goal = Number(e.target.value); save(); toast('Đã lưu mục tiêu.'); } },
-    [[20, 'Tối thiểu · 20 XP cơ bản (Focus: 40 XP / Duy trì: 10 XP)'], [30, 'Vừa phải · 30 XP cơ bản (Focus: 60 XP / Duy trì: 15 XP)'], [50, 'Nghiêm túc · 50 XP cơ bản (Focus: 100 XP / Duy trì: 25 XP)']].map(([v, l]) => h('option', { value: v, selected: (S.goal || 20) === v }, l)));
+  const goalSel = h('select', { id: 'goal', onchange: (e) => { S.goal = Number(e.target.value); save(); toast('Đã lưu mục tiêu ' + S.goal + ' phút/ngày.'); progressView(); } },
+    [[10, 'Nhẹ nhàng · 10 phút/ngày (Đạt mốc tối thiểu)'], [20, 'Vừa phải · 20 phút/ngày (Khuyên dùng)'], [30, 'Chuyên sâu · 30 phút/ngày (Tiến bộ nhanh)']].map(([v, l]) => h('option', { value: v, selected: (S.goal || 20) === v }, l)));
   const smartSchedCheck = h('input', { type: 'checkbox', id: 'smartSched', checked: S.smartSchedule !== false, onchange: (e) => { S.smartSchedule = e.target.checked; save(); toast('Đã cập nhật chế độ lộ trình.'); progressView(); } });
   let confirmReset = false;
   const resetBtn = h('button', { class: 'ghost block', onclick: async () => {
@@ -22841,19 +22822,23 @@ function progressView() {
   const c0 = S.lang, k0 = Object.keys(S.srs).filter((k) => k.startsWith(c0 + ':'));
   const xpTotal = (c) => Object.values(S.dl || {}).reduce((a, m) => a + (m[c] || 0), 0);
   const w0 = Object.keys(S.written).filter((k) => k.startsWith(c0 + ':')).length;
+  const ob = S.onboarding;
   mount(h('div', { class: 'stack-lg' },
-    h('div', { class: 'row between' }, h('h1', {}, 'Tiến độ'), h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } }, feedbackBtn({ mode: 'progress' }), langSwitch())), 
+    h('div', { class: 'row between', style: { alignItems: 'center' } },
+      h('h1', {}, 'Tiến độ'),
+      h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } }, syncButton(), feedbackBtn({ mode: 'progress' }), langSwitch())
+    ),
     h('div', { class: 'stats' },
       h('div', { class: 'stat' }, h('b', {}, streak(c0)), h('span', {}, 'chuỗi ngày · dài nhất ' + longest(c0))),
-      h('div', { class: 'stat' }, h('b', {}, xpOf(t, c0) + '/' + goal()), h('span', {}, 'XP hôm nay')),
-      h('div', { class: 'stat' }, h('b', {}, xpTotal(c0)), h('span', {}, 'tổng XP ' + L().short))),
+      h('div', { class: 'stat' }, h('b', {}, xpOf(t, c0) + '/' + goal() + 'p'), h('span', {}, 'phút hôm nay')),
+      h('div', { class: 'stat' }, h('b', {}, xpTotal(c0) + 'p'), h('span', {}, 'tổng thời gian học'))),
     h('div', { class: 'stats' },
       h('div', { class: 'stat' }, h('b', {}, Object.keys(S.lessons).filter((k) => k.startsWith(c0 + ':')).length), h('span', {}, 'bài đã học')),
       h('div', { class: 'stat' }, h('b', {}, k0.length), h('span', {}, 'mục đang ôn')),
       h('div', { class: 'stat' }, h('b', {}, LANGS[c0].cjk ? w0 : k0.filter((k) => S.srs[k].b >= 3).length), h('span', {}, LANGS[c0].cjk ? 'chữ đã viết' : 'đã nhớ chắc'))),
-    h('div', { class: 'panel stack' }, h('h3', {}, 'XP ' + L().short + ' 7 ngày qua'),
-      h('div', { class: 'week', role: 'img', 'aria-label': days.map((d) => wd[dayDate(d).getUTCDay()] + ': ' + xd(d) + ' XP').join(', ') },
-        days.map((d) => h('div', { class: d === t ? 'today' : '' }, h('span', {}, xd(d) || ''), h('i', { style: { height: (xd(d) / max * 100) + '%' } }), h('span', {}, wd[dayDate(d).getUTCDay()]))))),
+    h('div', { class: 'panel stack' }, h('h3', {}, 'Phút học ' + L().short + ' 7 ngày qua'),
+      h('div', { class: 'week', role: 'img', 'aria-label': days.map((d) => wd[dayDate(d).getUTCDay()] + ': ' + xd(d) + ' phút').join(', ') },
+        days.map((d) => h('div', { class: d === t ? 'today' : '' }, h('span', {}, xd(d) ? (xd(d) + 'p') : ''), h('i', { style: { height: (xd(d) / max * 100) + '%' } }), h('span', {}, wd[dayDate(d).getUTCDay()]))))),
     accordionItem({
       cls: 'acc-card',
       iconEl: '🏆',
@@ -22866,14 +22851,14 @@ function progressView() {
     accordionItem({
       cls: 'acc-card',
       iconEl: '⚙️',
-      title: 'Cài đặt lộ trình thông minh & Mục tiêu',
-      subtitle: (S.smartSchedule !== false ? 'Đang bật theo thứ · ' : 'Đang tắt · ') + 'Mục tiêu cơ bản ' + (S.goal || 20) + ' XP/ngày',
-      chips: [h('span', { class: 'chip small' }, (S.goal || 20) + ' XP')],
+      title: 'Cài đặt lộ trình & Khảo sát trình độ',
+      subtitle: 'Mục tiêu ' + (S.goal || 20) + ' phút/ngày' + (ob && ob.done ? (' · Trình độ ' + (ob.level || 'a1').toUpperCase()) : ''),
+      chips: [h('span', { class: 'chip small' }, (S.goal || 20) + ' phút')],
       body: [
-        h('label', { class: 'row', style: { alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 } }, smartSchedCheck, h('span', {}, 'Bật lộ trình học theo thứ trong tuần (chống loạn ngôn ngữ)')),
-        h('p', { class: 'small muted', style: { margin: 0 } }, 'Tự động tăng mục tiêu XP cho ngôn ngữ trọng tâm trong ngày và giảm nhẹ cho các ngôn ngữ duy trì (kèm nhắc nhở Spaced Repetition).'),
-        h('label', { for: 'goal', class: 'label', style: { marginTop: '4px' } }, 'Mức độ mục tiêu cơ bản'), goalSel,
-        h('p', { class: 'small muted', style: { margin: 0 } }, 'Mỗi từ, kanji, câu hoặc tình huống làm đúng được 5 XP. Học lại bài cũ được nửa XP.'),
+        h('label', { class: 'row', style: { alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 } }, smartSchedCheck, h('span', {}, 'Bật lịch nhắc thông minh theo thứ trong tuần')),
+        h('label', { for: 'goal', class: 'label', style: { marginTop: '4px' } }, 'Thời lượng mục tiêu mỗi ngày'), goalSel,
+        h('p', { class: 'small muted', style: { margin: 0 } }, 'Hệ thống tự động tính thời gian học thực tế (ít nhất 10 phút/ngày để giữ Streak).'),
+        h('button', { class: 'ghost mini block', style: { color: 'var(--teal)', border: '1px solid var(--line)', marginTop: '4px' }, onclick: () => openOnboardingModal(true) }, '🎯 Làm lại khảo sát trình độ & mục tiêu'),
         h('p', { class: 'small muted', style: { margin: 0 } }, 'Thêm vào màn hình chính trên iPhone: mở link bằng Safari, bấm Chia sẻ, chọn “Thêm vào MH chính”.')
       ]
     }),
