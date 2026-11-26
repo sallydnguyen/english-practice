@@ -6283,6 +6283,112 @@ function openSentenceBuilderPractice() {
   document.body.appendChild(overlay);
 }
 
+function openFlashcardPractice() {
+  if (document.getElementById('flashcard-overlay')) return;
+  const CARDS = [
+    { lv: 'A1', en: 'habit', pos: 'n.', vi: 'thói quen', ex: 'Reading is a good daily habit.' },
+    { lv: 'A2', en: 'reduce', pos: 'v.', vi: 'giảm bớt', ex: 'We need to reduce plastic waste.' },
+    { lv: 'A2', en: 'employee', pos: 'n.', vi: 'nhân viên', ex: 'Every employee gets a lunch break.' },
+    { lv: 'B1', en: 'clarify', pos: 'v.', vi: 'làm rõ', ex: 'Could you clarify the delivery date?' },
+    { lv: 'B1', en: 'agenda', pos: 'n.', vi: 'chương trình họp', ex: "Let's go through the agenda first." },
+    { lv: 'B1', en: 'supplier', pos: 'n.', vi: 'nhà cung cấp', ex: "I'll follow up with the supplier tomorrow." },
+    { lv: 'B2', en: 'absorb', pos: 'v.', vi: 'hấp thụ', ex: 'Plants absorb heat and clean the air.' },
+    { lv: 'B2', en: 'isolated', pos: 'adj.', vi: 'đơn lẻ, tách biệt', ex: 'Avoid memorizing isolated words.' }
+  ];
+  let idx = 0;
+  let flipped = false;
+
+  const overlay = h('div', {
+    id: 'flashcard-overlay',
+    style: {
+      position: 'fixed', inset: '0', zIndex: '9999',
+      background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+    }
+  });
+  const wrap = h('div', {
+    class: 'panel stack',
+    style: { width: '100%', maxWidth: '400px', padding: '18px', gap: '14px', borderRadius: '18px' }
+  });
+  overlay.appendChild(wrap);
+
+  function render() {
+    wrap.innerHTML = '';
+    const c = CARDS[idx];
+    wrap.appendChild(h('div', { class: 'row between', style: { alignItems: 'center' } },
+      h('span', { style: { fontWeight: 700, fontSize: '1.02rem' } }, `🃏 Flashcard (${idx + 1}/${CARDS.length})`),
+      h('button', { class: 'ghost mini', onclick: () => overlay.remove() }, '✕')
+    ));
+
+    const inner = h('div', {
+      style: {
+        position: 'relative', width: '100%', height: '210px',
+        transformStyle: 'preserve-3d', transition: 'transform 0.5s cubic-bezier(.2,.8,.2,1)',
+        transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+        cursor: 'pointer'
+      },
+      onclick: () => { flipped = !flipped; render(); }
+    });
+
+    const faceStyle = {
+      position: 'absolute', inset: '0', backfaceVisibility: 'hidden',
+      background: '#ffffff', color: '#0f172a', borderRadius: '16px',
+      border: '1px solid #e2e8f0', boxShadow: '0 10px 28px rgba(15, 23, 42, 0.14)',
+      padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
+    };
+
+    const front = h('div', { style: faceStyle },
+      h('div', { class: 'row between', style: { alignItems: 'center' } },
+        h('span', { class: 'chip level ' + c.lv.toLowerCase() }, c.lv),
+        h('div', { onclick: (e) => e.stopPropagation() }, spk('en', c.en))
+      ),
+      h('div', { class: 'stack center', style: { gap: '4px', textAlign: 'center' } },
+        h('div', { style: { fontSize: '1.65rem', fontWeight: 800, color: '#0f172a' } }, c.en),
+        h('div', { style: { fontSize: '.85rem', color: '#64748b', fontStyle: 'italic' } }, c.pos)
+      ),
+      h('div', { style: { textAlign: 'center', fontSize: '.75rem', color: '#94a3b8' } }, '👆 Chạm vào thẻ để lật')
+    );
+
+    const back = h('div', { style: Object.assign({}, faceStyle, { transform: 'rotateY(180deg)', background: '#f8fafc' }) },
+      h('div', { class: 'row between', style: { alignItems: 'center' } },
+        h('span', { style: { fontSize: '.75rem', fontWeight: 700, color: '#64748b' } }, 'NGHĨA TIẾNG VIỆT'),
+        h('div', { onclick: (e) => e.stopPropagation() }, spk('en', c.ex))
+      ),
+      h('div', { class: 'stack center', style: { gap: '8px', textAlign: 'center' } },
+        h('div', { style: { fontSize: '1.35rem', fontWeight: 800, color: '#0f766e' } }, c.vi),
+        h('div', { style: { fontSize: '.85rem', color: '#334155', lineHeight: 1.4 } }, `"${c.ex}"`)
+      ),
+      h('div', { style: { textAlign: 'center', fontSize: '.75rem', color: '#94a3b8' } }, '👆 Chạm để lật lại')
+    );
+
+    inner.appendChild(front);
+    inner.appendChild(back);
+
+    wrap.appendChild(h('div', { style: { perspective: '1000px', width: '100%', maxWidth: '340px', margin: '0 auto' } }, inner));
+
+    wrap.appendChild(h('div', { class: 'row between', style: { gap: '8px' } },
+      h('button', {
+        class: 'ghost small',
+        disabled: idx === 0,
+        onclick: () => { if (idx > 0) { idx--; flipped = false; render(); } }
+      }, '← Trước'),
+      h('button', {
+        class: 'ghost small',
+        onclick: () => { flipped = !flipped; render(); }
+      }, '🔄 Lật thẻ'),
+      h('button', {
+        class: 'btn small',
+        onclick: () => {
+          if (idx < CARDS.length - 1) { idx++; flipped = false; render(); }
+          else overlay.remove();
+        }
+      }, idx < CARDS.length - 1 ? 'Tiếp →' : 'Xong ✓')
+    ));
+  }
+  render();
+  document.body.appendChild(overlay);
+}
+
 let NEWS_OPEN_ID = '';
 const NEWS_QUIZ_ANS = {};
 const NEWS_SHOW_VI = {};
@@ -6796,7 +6902,12 @@ function homeView() {
         class: 'panel row',
         style: { flex: 1, padding: '10px 12px', gap: '8px', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontWeight: 700, fontSize: '.86rem' },
         onclick: openSentenceBuilderPractice
-      }, '🧩 Ghép câu')
+      }, '🧩 Ghép câu'),
+      h('button', {
+        class: 'panel row',
+        style: { flex: 1, padding: '10px 12px', gap: '8px', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontWeight: 700, fontSize: '.86rem' },
+        onclick: openFlashcardPractice
+      }, '🃏 Flashcard')
     ),
     S.lang === 'en' ? crash30HomeSection(d) : null,
     catBar,
