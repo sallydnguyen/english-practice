@@ -1,5 +1,5 @@
 {
   "version": "4.02",
-  "build": "20261126-0330",
-  "message": "Sắp xếp lại 5 tab gọn, tối ưu Trang chủ, Từ vựng, Luyện tập & Tiến độ theo phút học"
+  "build": "20261126-0340",
+  "message": "Sửa cơ chế cache Service Worker để luôn hiển thị bản mới nhất"
 }

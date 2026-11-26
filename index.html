@@ -1293,7 +1293,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/en.json và data/ielts_30day_listening.js,
    âm thanh thu sẵn nằm trong audio/ (audio/w*.json, audio/mail/, audio/listen/, audio/ielts/).
    ===================================================================== */
-const APP_BUILD_ID = '20261126-0330';
+const APP_BUILD_ID = '20261126-0340';
 const LANGS = {
   en: { label: 'English', vi: 'Tiếng Anh', short: 'Anh', folder: '', tts: 'en-US', rec: 'en-US', lang: 'en', cjk: false },
 };
@@ -5346,7 +5346,16 @@ const EN_DICT_LS_KEY = 'en-dict-cache-v1';
 
 try {
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    const hadCtrl = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((reg) => {
+      try { reg.update(); } catch (e) {}
+    }).catch(() => {});
+    let swReloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadCtrl || swReloading) return;
+      swReloading = true;
+      window.location.reload();
+    });
   }
 } catch (e) {}
 

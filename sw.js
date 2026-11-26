@@ -1,8 +1,7 @@
-const CACHE_NAME = 'english-practice-offline-v6';
+const CACHE_NAME = 'english-practice-offline-v7';
 const CORE_ASSETS = [
   './',
   './index.html',
-  './version.json',
   './data/en.json',
   './data/en_dict.json'
 ];
@@ -27,6 +26,30 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
+
+  const isVersion = url.pathname.endsWith('/version.json') || url.pathname === '/version.json';
+  const isHtml = req.mode === 'navigate' || url.pathname.endsWith('/') || url.pathname.endsWith('.html');
+
+  if (isVersion) {
+    event.respondWith(
+      fetch(req, { cache: 'no-store' }).catch(() => new Response('{}', { status: 503, headers: { 'Content-Type': 'application/json' } }))
+    );
+    return;
+  }
+
+  if (isHtml) {
+    event.respondWith(
+      fetch(req, { cache: 'no-cache' }).then((res) => {
+        if (res && res.status === 200) {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put('./index.html', copy)).catch(() => {});
+        }
+        return res;
+      }).catch(() => caches.match('./index.html', { ignoreSearch: true }).then((c) => c || new Response('', { status: 503 })))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(req, { ignoreSearch: true }).then((cached) => {
       if (cached) return cached;
