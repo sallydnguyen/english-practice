@@ -1,4 +1,4 @@
-"""Generate single-language English Practice index.html from lingogo/index.html."""
+"""Generate single-language Lingogo English index.html from lingogo/index.html."""
 import json
 import re
 from pathlib import Path
@@ -44,7 +44,7 @@ def main() -> None:
     html = replace_exact(
         html,
         '<meta name="apple-mobile-web-app-title" content="Lingogo">\n<title>Lingogo</title>',
-        '<meta name="apple-mobile-web-app-title" content="English Practice">\n<title>English Practice</title>',
+        '<meta name="apple-mobile-web-app-title" content="Lingogo English">\n<title>Lingogo English</title>',
         label="title tags",
     )
     html = replace_exact(
@@ -72,7 +72,7 @@ def main() -> None:
         "   Lingogo — học Anh, Trung, Nhật trong một app.\n"
         "   Dữ liệu bài học nằm trong data/<ngôn ngữ>.json (tải khi cần), âm thanh thu sẵn\n"
         "   trong audio/, nét chữ trong data/strokes-<zh|ja>.json.",
-        "   English Practice — Học & Luyện Tiếng Anh mỗi ngày (đồng bộ từ Lingogo).\n"
+        "   Lingogo English — Học & Luyện Tiếng Anh mỗi ngày (đồng bộ từ Lingogo).\n"
         "   Dữ liệu bài học nằm trong data/en.json và data/ielts_30day_listening.js,\n"
         "   âm thanh thu sẵn nằm trong audio/ (audio/w*.json, audio/mail/, audio/listen/, audio/ielts/).",
         label="banner comment",
@@ -182,7 +182,7 @@ def main() -> None:
     html = replace_exact(
         html,
         "description: 'Lingogo Learning Progress Backup (Tự động đồng bộ)',",
-        "description: 'English Practice Learning Progress Backup (Tự động đồng bộ)',",
+        "description: 'Lingogo English Learning Progress Backup (Tự động đồng bộ)',",
         label="gist description",
     )
     html = replace_exact(
@@ -451,7 +451,7 @@ def main() -> None:
         "      h('p', { class: 'label' }, 'Lingogo'),\n"
         "      h('h1', {}, 'Học để nói được, mỗi ngày một chút'),\n"
         "      h('p', { class: 'muted' }, 'Ba thứ tiếng trong một app: bài học theo chủ đề, ôn tập đúng lúc, luyện nói và tập viết chữ Hán, kana.'),",
-        "      h('p', { class: 'label' }, 'English Practice'),\n"
+        "      h('p', { class: 'label' }, 'Lingogo English'),\n"
         "      h('h1', {}, 'Học để nói được, mỗi ngày một chút'),\n"
         "      h('p', { class: 'muted' }, 'Học Tiếng Anh giao tiếp & công việc đa ngành từ A1 đến C2: bài học theo chủ đề, nghe hội thoại thực tế, luyện nói, viết email và đề IELTS 4 kỹ năng.'),",
         label="welcome header",
@@ -485,26 +485,26 @@ def main() -> None:
     )
     html, n_footer = re.subn(
         rf"'Lingogo v{re.escape(app_ver)} · Cập nhật [^']+'",
-        f"'English Practice v{app_ver} · Cập nhật 18/11/2026'",
+        f"'Lingogo English v{app_ver} · Cập nhật 18/11/2026'",
         html,
     )
     assert n_footer == 1, f"Expected 1 homeView footer match, got {n_footer}"
     html = replace_exact(
         html,
         "h('p', { class: 'label' }, 'Lingogo'),\n        h('h1', {}, 'Chào ' + S.name + ', hôm nay học gì?')",
-        "h('p', { class: 'label' }, 'English Practice'),\n        h('h1', {}, 'Chào ' + S.name + ', hôm nay học gì?')",
+        "h('p', { class: 'label' }, 'Lingogo English'),\n        h('h1', {}, 'Chào ' + S.name + ', hôm nay học gì?')",
         label="pickView label",
     )
     html = replace_exact(
         html,
         "tab Học của Lingogo",
-        "tab Học của English Practice",
+        "tab Học của Lingogo English",
         label="knowledge tip 1",
     )
     html = replace_exact(
         html,
         "Tab Ôn tập của Lingogo",
-        "Tab Ôn tập của English Practice",
+        "Tab Ôn tập của Lingogo English",
         label="knowledge tip 2",
     )
     html = replace_exact(
@@ -527,7 +527,7 @@ def main() -> None:
     html = replace_exact(
         html,
         "      `### 💬 [Báo lỗi Lingogo] ${tagObj.label}\\n` +",
-        "      `### 💬 [Báo lỗi English Practice] ${tagObj.label}\\n` +",
+        "      `### 💬 [Báo lỗi Lingogo English] ${tagObj.label}\\n` +",
         label="feedback title",
     )
     html = replace_exact(

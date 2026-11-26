@@ -7,8 +7,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="English Practice">
-<title>English Practice</title>
+<meta name="apple-mobile-web-app-title" content="Lingogo English">
+<title>Lingogo English</title>
 <script>
 /* Giao diện Sáng / Tối / Theo máy — lưu riêng ở localStorage (không đồng bộ qua Gist). */
 (function () {
@@ -1287,11 +1287,11 @@ input.ielts-inline-input {
   }
 })();
 /* =====================================================================
-   English Practice — Học & Luyện Tiếng Anh mỗi ngày (đồng bộ từ Lingogo).
+   Lingogo English — Học & Luyện Tiếng Anh mỗi ngày (đồng bộ từ Lingogo).
    Dữ liệu bài học nằm trong data/en.json và data/ielts_30day_listening.js,
    âm thanh thu sẵn nằm trong audio/ (audio/w*.json, audio/mail/, audio/listen/, audio/ielts/).
    ===================================================================== */
-const APP_BUILD_ID = '20261126-0013';
+const APP_BUILD_ID = '20261126-0041';
 const LANGS = {
   en: { label: 'English', vi: 'Tiếng Anh', short: 'Anh', folder: '', tts: 'en-US', rec: 'en-US', lang: 'en', cjk: false },
 };
@@ -1656,7 +1656,7 @@ async function findOrCreateGhGist(token) {
     method: 'POST',
     headers: h,
     body: JSON.stringify({
-      description: 'English Practice Learning Progress Backup (Tự động đồng bộ)',
+      description: 'Lingogo English Learning Progress Backup (Tự động đồng bộ)',
       public: false,
       files: { 'lingogo-progress.json': { content: JSON.stringify(S) } }
     })
@@ -4735,7 +4735,7 @@ function pickView() {
 
     mount(h('div', { class: 'stack-lg', style: { paddingTop: '16px' } },
       h('div', { class: 'stack', style: { gap: '4px' } },
-        h('p', { class: 'label' }, 'English Practice'),
+        h('p', { class: 'label' }, 'Lingogo English'),
         h('h1', {}, 'Chào ' + S.name + ', hôm nay học gì?')
       ),
       langChoices,
@@ -4795,7 +4795,7 @@ function welcomeView() {
   const had = Object.keys(S.days).length > 0;
   mount(h('div', { class: 'stack-lg', style: { paddingTop: '24px' } },
     h('div', { class: 'stack' },
-      h('p', { class: 'label' }, 'English Practice'),
+      h('p', { class: 'label' }, 'Lingogo English'),
       h('h1', {}, 'Học để nói được, mỗi ngày một chút'),
       h('p', { class: 'muted' }, 'Học Tiếng Anh giao tiếp & công việc đa ngành từ A1 đến C2: bài học theo chủ đề, nghe hội thoại thực tế, luyện nói, viết email và đề IELTS 4 kỹ năng.'),
       had && h('p', { class: 'note' }, 'Đã có tiến độ cũ của bạn. Bạn sẽ học tiếp từ chỗ đã dừng.')),
@@ -5818,7 +5818,7 @@ function homeView() {
       });
       return wrap;
     })(),
-    h('p', { class: 'small muted center', style: { margin: '24px 0 12px 0', fontSize: '.76rem', opacity: .65 } }, 'English Practice v4.00 · Cập nhật 18/11/2026')));
+    h('p', { class: 'small muted center', style: { margin: '24px 0 12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.00 · Cập nhật 18/11/2026')));
 }
 
 // ===== HỆ THỐNG LUYỆN THI IELTS 4 KỸ NĂNG (TIẾNG ANH) =====
@@ -17385,7 +17385,7 @@ function renderEnglishKnowledgeView() {
             ),
             h('div', { class: 'panel', style: { background: 'var(--sunk)', borderRadius: '10px', padding: '12px' } },
               h('b', {}, '3. Nói đè đồng thời (Simultaneous Shadowing): '),
-              h('span', { class: 'small' }, 'Sau khi quen, bật audio chạy liên tục và nói đè cùng lúc với audio với độ trễ dưới 0.3 giây. Luyện tập 15–20 phút mỗi ngày trong tab Học của English Practice sẽ giúp bạn nói mượt mà, không còn khựng lại dịch thầm trong đầu.')
+              h('span', { class: 'small' }, 'Sau khi quen, bật audio chạy liên tục và nói đè cùng lúc với audio với độ trễ dưới 0.3 giây. Luyện tập 15–20 phút mỗi ngày trong tab Học của Lingogo English sẽ giúp bạn nói mượt mà, không còn khựng lại dịch thầm trong đầu.')
             )
           )
         )
@@ -17517,7 +17517,7 @@ function renderEnglishKnowledgeView() {
           h('div', { class: 'panel', style: { background: 'var(--sunk)', borderRadius: '10px', padding: '12px', gap: '6px' } },
             h('b', { style: { color: 'var(--teal)' } }, '🔄 Bí quyết 2: Lặp lại ngắt quãng (Spaced Repetition)'),
             h('p', { class: 'small', style: { margin: '4px 0 0 0', lineHeight: 1.5 } },
-              'Theo đường cong lãng quên của Hermann Ebbinghaus, não người quên 70% kiến thức mới sau 24 giờ. Ôn tập đúng các điểm vàng (sau 1 ngày ➔ 3 ngày ➔ 7 ngày ➔ 14 ngày ➔ 30 ngày) sẽ chuyển từ vựng từ vùng nhớ tạm thời sang vùng trí nhớ vĩnh viễn. Tab Ôn tập của English Practice tự động áp dụng quy luật này để nhắc nhở bạn.'
+              'Theo đường cong lãng quên của Hermann Ebbinghaus, não người quên 70% kiến thức mới sau 24 giờ. Ôn tập đúng các điểm vàng (sau 1 ngày ➔ 3 ngày ➔ 7 ngày ➔ 14 ngày ➔ 30 ngày) sẽ chuyển từ vựng từ vùng nhớ tạm thời sang vùng trí nhớ vĩnh viễn. Tab Ôn tập của Lingogo English tự động áp dụng quy luật này để nhắc nhở bạn.'
             )
           )
         )
@@ -21425,7 +21425,7 @@ function showFeedbackModal(customCtx) {
     const tagObj = TAGS.find(t => t.id === selectedTag) || TAGS[0];
     const desc = textarea.value.trim() || 'Không có mô tả chi tiết';
     return (
-      `### 💬 [Báo lỗi English Practice] ${tagObj.label}\n` +
+      `### 💬 [Báo lỗi Lingogo English] ${tagObj.label}\n` +
       `- **Ngôn ngữ:** ${langName} (${S.lang})\n` +
       `- **Vị trí bài học:** ${locText}\n` +
       `- **Thiết bị:** ${device} · ${browser} (${window.innerWidth}x${window.innerHeight})\n` +
