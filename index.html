@@ -354,6 +354,8 @@ select { width: 100%; }
 .endef { text-align: center; color: var(--muted); font-size: .95rem; font-style: italic; }
 .tokens { display: flex; flex-wrap: wrap; gap: 8px; min-height: 52px; align-content: flex-start; }
 .tokens.answer { border-bottom: 2px dashed var(--line); padding-bottom: 10px; }
+html { overscroll-behavior-y: contain; }
+button, a, [role="button"] { touch-action: manipulation; }
 .tokens button { min-height: 44px; padding: 8px 14px; user-select: none; -webkit-user-select: none; touch-action: manipulation; transition: transform .12s, box-shadow .12s, border-color .12s; }
 .tokens.answer button { cursor: grab; }
 .tokens.answer button:active { cursor: grabbing; }
