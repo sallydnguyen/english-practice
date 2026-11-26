@@ -1,5 +1,5 @@
 {
-  "version": "4.02",
-  "build": "20261126-0340",
-  "message": "Sửa cơ chế cache Service Worker để luôn hiển thị bản mới nhất"
+  "version": "4.03",
+  "build": "20261126-0400",
+  "message": "Sửa lỗi nhận diện giọng nói trên iOS/iPadOS, thêm nút Dừng & Chấm và nâng cấp AI chấm phát âm"
 }
