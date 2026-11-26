@@ -1786,7 +1786,7 @@ function getDaySchedule(d = todayN()) {
 }
 
 function goal(code = S.lang, d = todayN()) {
-  const base = Math.max(20, S.goal || 20);
+  const base = Math.max(10, S.goal || 10);
   if (S.smartSchedule === false) return base;
   const sch = getDaySchedule(d);
   if (!sch || !sch.goals || !sch.goals[code]) return base;
@@ -1795,7 +1795,7 @@ function goal(code = S.lang, d = todayN()) {
 
 const xpOf = (d, code) => ((S.dl || {})[d] || {})[code] || 0;
 const metGoal = (d, code) => xpOf(d, code) >= goal(code, d);
-// Duy trì chuỗi ngày học liên tục (Streak): Chỉ cần người học duy trì việc học đều đặn mỗi ngày (tối thiểu 10 XP hoặc đạt mục tiêu)
+// Duy trì chuỗi ngày học liên tục (Streak): ít nhất 10 phút học mỗi ngày là đạt mốc
 const hasLearnedDay = (d, code) => xpOf(d, code) >= Math.min(10, goal(code, d));
 
 function streak(code = S.lang) {
@@ -1817,9 +1817,14 @@ function addXp(n, code = S.lang) {
   S.days[t] = (S.days[t] || 0) + n;
   S.dl = S.dl || {}; S.dl[t] = S.dl[t] || {}; S.dl[t][code] = (S.dl[t][code] || 0) + n;
   save();
-  if (!before && metGoal(t, code)) setTimeout(() => toast('Đạt mục tiêu ' + goal(code, t) + ' XP ' + LANGS[code].short + ' hôm nay! 🎉'), 300);
+  if (!before && metGoal(t, code)) setTimeout(() => toast('Đạt mục tiêu ' + goal(code, t) + ' phút học ' + LANGS[code].short + ' hôm nay! 🎉'), 300);
 }
-const XP_ITEM = 5; // mỗi từ (hoặc kanji, câu, tình huống) làm đúng = 5 XP
+const XP_ITEM = 0; // Tính tiến độ theo thời gian học (phút), không cộng XP theo từng từ
+setInterval(() => {
+  if (typeof document !== 'undefined' && document.visibilityState === 'visible' && S && S.name) {
+    addXp(1, S.lang || 'en');
+  }
+}, 60000);
 
 // ===== Ôn tập ngắt quãng FSRS (Free Spaced Repetition Scheduler: Stability st + Difficulty d + Box b 0–6) =====
 const IV = [1, 1, 3, 7, 14, 30, 60];
