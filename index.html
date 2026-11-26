@@ -13909,7 +13909,7 @@ function lessonView(t, i, opts = null) {
   const catExam = opts && opts.catExam;
   setFeedbackContext({ mode: 'lesson', topicId: t.id, topicTitle: t.sub || t.title, lessonIndex: i, lessonKind: t.lessons[i].kind, lessonTitle: lessonTitle(t, i) });
   const code = t.lang || S.lang || 'en', steps = catExam ? catExam.steps : buildSteps(t, i), first = new Map(), retried = new Set(), queue = steps.map((s, n) => Object.assign({}, s, { n }));
-  let done = 0;
+  let done = 0, showTheory = false;
   if (LANGS[code] && LANGS[code].cjk) loadStrokes(code);
   if (catExam) catExam.topics.slice(0, 6).forEach((subT) => preloadTopicAudio(code, subT));
   else preloadTopicAudio(code, t);
@@ -14468,8 +14468,31 @@ function lessonView(t, i, opts = null) {
     }
     btn.addEventListener('click', submit);
     const total = done + queue.length + 1;
+    const gramList = (t.gram || []).map((gid) => DATA[code] && DATA[code].grammar && DATA[code].grammar[gid]).filter(Boolean);
+    const theoryPanel = h('div', {
+      class: 'panel stack',
+      hidden: !showTheory,
+      style: { gap: '8px', padding: '12px', borderRadius: '12px', background: 'var(--bg-soft, rgba(99,102,241,0.06))', border: '1px solid var(--line)' }
+    },
+      h('div', { class: 'row between', style: { alignItems: 'center' } },
+        h('span', { class: 'small', style: { fontWeight: 700, color: 'var(--brand)' } }, '📖 LÝ THUYẾT LIÊN QUAN · ĐIỂM CẦN NHỚ'),
+        h('button', { class: 'ghost mini', onclick: () => { showTheory = false; theoryPanel.hidden = true; } }, 'Thu gọn ▴')
+      ),
+      gramList.length ? gramList.map((g) => h('div', { class: 'stack', style: { gap: '4px', paddingTop: '6px', borderTop: '1px solid var(--line)' } },
+        h('div', { style: { fontWeight: 700, fontSize: '.92rem' } }, g.t || g.title || ''),
+        g.f ? h('div', { class: 'chip', style: { alignSelf: 'flex-start', fontFamily: 'monospace' } }, g.f) : null,
+        g.d ? h('div', { class: 'small', style: { lineHeight: 1.45 } }, g.d) : null,
+        (g.e && g.e.length) ? h('div', { class: 'small muted', style: { lineHeight: 1.45 } }, 'Ví dụ: ' + (Array.isArray(g.e[0]) ? g.e[0].join(' — ') : g.e[0])) : null
+      )) : h('p', { class: 'small muted', style: { margin: 0 } }, `Chủ đề: ${t.sub || t.title}. Hãy chú ý từ vựng, cấu trúc câu và phát âm chuẩn trong bài tập bên dưới.`)
+    );
+    const theoryBtn = h('button', {
+      class: 'ghost mini',
+      style: { whiteSpace: 'nowrap', fontWeight: 700 },
+      onclick: () => { showTheory = !showTheory; theoryPanel.hidden = !showTheory; }
+    }, '📖 Lý thuyết');
     mount(h('div', { class: 'stack-lg' },
-      h('div', { class: 'topbar' }, h('button', { class: 'ghost', onclick: exit }, 'Thoát'), h('div', { class: 'bar' }, h('i', { style: { width: (done / total * 100) + '%' } })), feedbackBtn()),
+      h('div', { class: 'topbar' }, h('button', { class: 'ghost', onclick: exit }, 'Thoát'), h('div', { class: 'bar' }, h('i', { style: { width: (done / total * 100) + '%' } })), theoryBtn, feedbackBtn()),
+      theoryPanel,
       retried.has(ex.n) && first.has(ex.n) && h('span', { class: 'chip', style: { alignSelf: 'flex-start' } }, 'Làm lại câu chưa đúng'),
       body, h('div', { class: 'dock stack', style: { gap: '6px' } }, btn, h('p', { class: 'keyhint' }, 'Phím 1–4 để chọn · Enter để kiểm tra / tiếp tục')), fb));
     update();
