@@ -1520,7 +1520,7 @@ function cleanPhaseName(name) {
 }
 const EN_CATEGORIES = CATEGORIES.en;
 let subjectsOpen = false;
-const fresh = () => ({ v: 2, name: '', goal: 20, lang: 'en', enCat: 'a1', zhCat: 'hsk1', jaCat: 'n5', days: {}, dl: {}, pv: {}, srs: {}, lessons: {}, spoken: {}, written: {}, fill: {}, gq: {}, en_crash30: {}, ach: {}, del: {}, delAll: 0, t: 0 });
+const fresh = () => ({ v: 2, name: '', goal: 20, lang: 'en', enCat: 'a1', zhCat: 'hsk1', jaCat: 'n5', onboarding: null, days: {}, dl: {}, pv: {}, srs: {}, lessons: {}, spoken: {}, written: {}, fill: {}, gq: {}, en_crash30: {}, ach: {}, del: {}, delAll: 0, t: 0 });
 let S = fresh();
 try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch (e) { /* bị chặn lưu trữ */ }
 S.lang = 'en';
@@ -5550,6 +5550,335 @@ function dictView() {
     extBox
   ));
 }
+let ONBOARDING_SHOWN_SESSION = false;
+function openOnboardingModal(force = false) {
+  if (document.getElementById('onboarding-overlay')) return;
+  const GOALS = [
+    { id: 'comm30', icon: '🚀', label: 'Giao tiếp cấp tốc', desc: 'Phản xạ nói nhanh trong 30 ngày' },
+    { id: 'work', icon: '💼', label: 'Công việc', desc: 'Email, họp hành, giao tiếp công sở' },
+    { id: 'ielts', icon: '🎓', label: 'Luyện thi IELTS', desc: 'Nâng band điểm Nghe · Nói · Đọc · Viết' },
+    { id: 'foundation', icon: '🌱', label: 'Học từ nền tảng', desc: 'Xây gốc từ vựng & ngữ pháp vững chắc' }
+  ];
+  const TIMES = [10, 20, 30];
+  const QUESTIONS = [
+    {
+      level: 'A1', type: 'Từ vựng',
+      q: 'She _____ a teacher at a primary school.',
+      opts: ['is', 'are', 'am', 'be'], ans: 0
+    },
+    {
+      level: 'A2', type: 'Ngữ pháp',
+      q: 'Yesterday, we _____ to the supermarket to buy some fruit.',
+      opts: ['went', 'go', 'going', 'will go'], ans: 0
+    },
+    {
+      level: 'A2', type: 'Nghe hiểu',
+      audioText: 'What does your company do?',
+      q: 'Nghe câu hỏi và chọn ý nghĩa đúng:',
+      opts: ['Lĩnh vực hoạt động của công ty', 'Thời gian làm việc mỗi ngày', 'Địa chỉ văn phòng mới', 'Mức lương khởi điểm'], ans: 0
+    },
+    {
+      level: 'B1', type: 'Ngữ pháp',
+      q: 'If it _____ tomorrow, we will cancel the outdoor meeting.',
+      opts: ['rains', 'rained', 'will rain', 'raining'], ans: 0
+    },
+    {
+      level: 'B1', type: 'Nghe hiểu',
+      audioText: 'Could you clarify the delivery date?',
+      q: 'Nghe câu nói và chọn hành động người nói muốn:',
+      opts: ['Làm rõ ngày giao hàng', 'Hủy đơn hàng ngay', 'Gửi lại hóa đơn', 'Thay đổi địa chỉ nhận'], ans: 0
+    },
+    {
+      level: 'B2', type: 'Từ vựng & Ngữ pháp',
+      q: 'Despite _____ tired, she finished the quarterly report on time.',
+      opts: ['feeling', 'felt', 'to feel', 'feel'], ans: 0
+    }
+  ];
+
+  const prev = S.onboarding || {};
+  const st = {
+    step: 1,
+    name: S.name || prev.name || '',
+    goalType: prev.goalType || 'comm30',
+    dailyMinutes: prev.dailyMinutes || S.goal || 20,
+    qIdx: 0,
+    answers: new Array(QUESTIONS.length).fill(-1),
+    skipped: false,
+    score: 0,
+    level: 'a1'
+  };
+
+  const overlay = h('div', {
+    id: 'onboarding-overlay',
+    style: {
+      position: 'fixed', inset: '0', zIndex: '9999',
+      background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+    }
+  });
+  const card = h('div', {
+    class: 'panel stack',
+    style: {
+      width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto',
+      padding: '20px', gap: '14px', borderRadius: '18px',
+      boxShadow: '0 20px 50px rgba(0,0,0,0.3)'
+    }
+  });
+  overlay.appendChild(card);
+
+  function closeModal() {
+    overlay.remove();
+  }
+
+  function computeResult(skipped) {
+    st.skipped = skipped;
+    if (skipped) {
+      st.score = 0;
+      st.level = st.goalType === 'comm30' ? 'b1' : 'a1';
+    } else {
+      let sc = 0;
+      QUESTIONS.forEach((q, i) => { if (st.answers[i] === q.ans) sc++; });
+      st.score = sc;
+      st.level = sc >= 6 ? 'b2' : sc >= 4 ? 'b1' : sc >= 2 ? 'a2' : 'a1';
+    }
+    st.step = 3;
+    renderStep();
+  }
+
+  function finishAndApply(openCrash30) {
+    if (st.name.trim()) S.name = st.name.trim();
+    S.goal = st.dailyMinutes;
+    S.enCat = openCrash30 ? 'b1' : st.level;
+    S.onboarding = {
+      done: true,
+      name: S.name,
+      goalType: st.goalType,
+      dailyMinutes: st.dailyMinutes,
+      level: st.level,
+      score: st.score,
+      total: QUESTIONS.length,
+      skipped: st.skipped,
+      ts: Date.now()
+    };
+    if (openCrash30) CRASH30_OPEN = true;
+    save();
+    closeModal();
+    homeView();
+  }
+
+  function renderStep() {
+    card.innerHTML = '';
+    const header = h('div', { class: 'row between', style: { alignItems: 'center' } },
+      h('div', { class: 'row', style: { gap: '8px', alignItems: 'center' } },
+        h('span', { class: 'chip', style: { fontWeight: 700 } }, `Bước ${st.step}/3`),
+        h('span', { class: 'small muted' },
+          st.step === 1 ? 'Thông tin & Mục tiêu' :
+          st.step === 2 ? 'Test nhanh trình độ' : 'Gợi ý lộ trình'
+        )
+      ),
+      force ? h('button', {
+        class: 'ghost mini',
+        onclick: closeModal,
+        'aria-label': 'Đóng'
+      }, '✕') : null
+    );
+    card.appendChild(header);
+
+    if (st.step === 1) {
+      const nameInput = h('input', {
+        type: 'text',
+        value: st.name,
+        placeholder: 'Nhập tên của bạn (không bắt buộc)...',
+        style: {
+          width: '100%', padding: '10px 12px', borderRadius: '10px',
+          border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--ink)',
+          fontSize: '.95rem', boxSizing: 'border-box'
+        },
+        oninput: (e) => { st.name = e.target.value; }
+      });
+
+      card.appendChild(h('div', { class: 'stack', style: { gap: '6px' } },
+        h('h3', { style: { margin: 0, fontSize: '1.15rem' } }, '👋 Chào mừng bạn đến với Lingogo English!'),
+        h('p', { class: 'small muted', style: { margin: 0 } }, 'Hãy cho chúng tôi biết mục tiêu để gợi ý lộ trình học phù hợp nhất.')
+      ));
+
+      card.appendChild(h('div', { class: 'stack', style: { gap: '6px' } },
+        h('label', { class: 'small', style: { fontWeight: 700 } }, 'Tên của bạn'),
+        nameInput
+      ));
+
+      card.appendChild(h('div', { class: 'stack', style: { gap: '6px' } },
+        h('label', { class: 'small', style: { fontWeight: 700 } }, 'Mục tiêu học tập'),
+        h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' } },
+          GOALS.map((g) => {
+            const active = st.goalType === g.id;
+            return h('button', {
+              class: active ? 'btn' : 'ghost',
+              style: {
+                textAlign: 'left', padding: '10px', borderRadius: '12px',
+                display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start',
+                border: active ? '2px solid var(--brand)' : '1px solid var(--line)'
+              },
+              onclick: () => { st.goalType = g.id; renderStep(); }
+            },
+              h('span', { style: { fontWeight: 700, fontSize: '.88rem' } }, g.icon + ' ' + g.label),
+              h('span', { class: 'small', style: { fontSize: '.74rem', opacity: 0.85, fontWeight: 400 } }, g.desc)
+            );
+          })
+        )
+      ));
+
+      card.appendChild(h('div', { class: 'stack', style: { gap: '6px' } },
+        h('label', { class: 'small', style: { fontWeight: 700 } }, 'Thời lượng học mỗi ngày'),
+        h('div', { class: 'row', style: { gap: '8px' } },
+          TIMES.map((m) => {
+            const active = st.dailyMinutes === m;
+            return h('button', {
+              class: active ? 'btn' : 'ghost',
+              style: { flex: 1, padding: '8px 10px', borderRadius: '10px', fontWeight: 700 },
+              onclick: () => { st.dailyMinutes = m; renderStep(); }
+            }, m + ' phút');
+          })
+        )
+      ));
+
+      card.appendChild(h('div', { class: 'row between', style: { marginTop: '6px' } },
+        h('button', {
+          class: 'ghost small',
+          onclick: () => computeResult(true)
+        }, 'Bỏ qua khảo sát'),
+        h('button', {
+          class: 'btn',
+          onclick: () => { st.step = 2; renderStep(); }
+        }, 'Tiếp tục: Test nhanh →')
+      ));
+    } else if (st.step === 2) {
+      const q = QUESTIONS[st.qIdx];
+      const answered = st.answers[st.qIdx];
+      card.appendChild(h('div', { class: 'row between', style: { alignItems: 'center' } },
+        h('h3', { style: { margin: 0, fontSize: '1.05rem' } }, `Câu ${st.qIdx + 1}/${QUESTIONS.length}`),
+        h('span', { class: 'chip level ' + q.level.toLowerCase() }, `${q.level} · ${q.type}`)
+      ));
+
+      if (q.audioText) {
+        card.appendChild(h('div', {
+          class: 'row',
+          style: {
+            gap: '10px', alignItems: 'center', padding: '10px 12px',
+            borderRadius: '12px', background: 'var(--bg-soft, rgba(99,102,241,0.08))'
+          }
+        },
+          spk('en', q.audioText),
+          h('span', { class: 'small', style: { fontWeight: 600 } }, 'Bấm loa để nghe đoạn hội thoại ngắn')
+        ));
+      }
+
+      card.appendChild(h('p', { style: { margin: '4px 0', fontWeight: 600, fontSize: '1rem', lineHeight: 1.45 } }, q.q));
+
+      card.appendChild(h('div', { class: 'stack', style: { gap: '8px' } },
+        q.opts.map((opt, idx) => {
+          const sel = answered === idx;
+          return h('button', {
+            class: sel ? 'btn' : 'ghost',
+            style: {
+              textAlign: 'left', padding: '10px 12px', borderRadius: '10px',
+              justifyContent: 'flex-start', fontWeight: sel ? 700 : 500
+            },
+            onclick: () => {
+              st.answers[st.qIdx] = idx;
+              if (st.qIdx < QUESTIONS.length - 1) {
+                st.qIdx++;
+                renderStep();
+              } else {
+                computeResult(false);
+              }
+            }
+          }, `${String.fromCharCode(65 + idx)}. ${opt}`);
+        })
+      ));
+
+      card.appendChild(h('div', { class: 'row between', style: { marginTop: '6px' } },
+        h('div', { class: 'row', style: { gap: '8px' } },
+          st.qIdx > 0 ? h('button', {
+            class: 'ghost small',
+            onclick: () => { st.qIdx--; renderStep(); }
+          }, '← Câu trước') : h('button', {
+            class: 'ghost small',
+            onclick: () => { st.step = 1; renderStep(); }
+          }, '← Quay lại'),
+          h('button', {
+            class: 'ghost small',
+            onclick: () => computeResult(true)
+          }, 'Bỏ qua test')
+        ),
+        st.qIdx < QUESTIONS.length - 1
+          ? h('button', { class: 'ghost small', onclick: () => { st.qIdx++; renderStep(); } }, 'Câu sau →')
+          : h('button', { class: 'btn small', onclick: () => computeResult(false) }, 'Xem kết quả →')
+      ));
+    } else {
+      const goalObj = GOALS.find((g) => g.id === st.goalType) || GOALS[0];
+      const lvUpper = st.level.toUpperCase();
+      const recommendCrash30 = st.level === 'b1' || st.level === 'b2' || st.goalType === 'comm30';
+
+      card.appendChild(h('div', { class: 'stack', style: { gap: '6px' } },
+        h('h3', { style: { margin: 0, fontSize: '1.15rem' } },
+          st.name ? `🎉 Tuyệt vời, ${st.name}!` : '🎉 Lộ trình của bạn đã sẵn sàng!'
+        ),
+        h('p', { class: 'small muted', style: { margin: 0 } },
+          st.skipped
+            ? 'Bạn đã bỏ qua bài test nhanh. Hệ thống gợi ý lộ trình theo mục tiêu đã chọn:'
+            : `Bạn trả lời đúng ${st.score}/${QUESTIONS.length} câu. Trình độ hiện tại: ${lvUpper}.`
+        )
+      ));
+
+      card.appendChild(h('div', {
+        class: 'panel stack',
+        style: { gap: '6px', padding: '12px', borderRadius: '12px', background: 'var(--bg-soft, rgba(99,102,241,0.06))' }
+      },
+        h('div', { class: 'row between' },
+          h('span', { class: 'small muted' }, 'Mục tiêu'),
+          h('span', { class: 'small', style: { fontWeight: 700 } }, goalObj.icon + ' ' + goalObj.label)
+        ),
+        h('div', { class: 'row between' },
+          h('span', { class: 'small muted' }, 'Thời lượng'),
+          h('span', { class: 'small', style: { fontWeight: 700 } }, st.dailyMinutes + ' phút / ngày')
+        ),
+        h('div', { class: 'row between' },
+          h('span', { class: 'small muted' }, 'Trình độ xếp loại'),
+          h('span', { class: 'chip level ' + st.level }, lvUpper)
+        )
+      ));
+
+      if (recommendCrash30) {
+        card.appendChild(h('p', { class: 'small', style: { margin: 0, lineHeight: 1.5 } },
+          `💡 Gợi ý: Với mục tiêu ${goalObj.label} và trình độ ${lvUpper}, bạn có thể mở thẳng Khóa Giao tiếp cấp tốc 30 ngày hoặc học theo cấp độ ${lvUpper}.`
+        ));
+        card.appendChild(h('div', { class: 'stack', style: { gap: '8px', marginTop: '4px' } },
+          h('button', {
+            class: 'btn',
+            onclick: () => finishAndApply(true)
+          }, '🚀 Mở Khóa Giao tiếp cấp tốc 30 ngày'),
+          h('button', {
+            class: 'ghost',
+            onclick: () => finishAndApply(false)
+          }, `Vào học cấp độ ${lvUpper}`)
+        ));
+      } else {
+        card.appendChild(h('p', { class: 'small', style: { margin: 0, lineHeight: 1.5 } },
+          `💡 Gợi ý: Hệ thống sẽ chọn sẵn cấp độ ${lvUpper} trên trang chủ để bạn xây dựng nền tảng vững chắc.`
+        ));
+        card.appendChild(h('button', {
+          class: 'btn',
+          style: { marginTop: '4px' },
+          onclick: () => finishAndApply(false)
+        }, `🌱 Bắt đầu học cấp độ ${lvUpper}`));
+      }
+    }
+  }
+
+  renderStep();
+  document.body.appendChild(overlay);
+}
 function homeView() {
   const d = DATA[S.lang], st = streak(), xp = xpOf(todayN(), S.lang), due = dueIn(S.lang);
   const langCats = CATEGORIES[S.lang];
@@ -5726,6 +6055,32 @@ function homeView() {
           class: 'ghost mini',
           style: { whiteSpace: 'nowrap', padding: '4px 10px', fontSize: '.76rem', fontWeight: 600, flexShrink: 0 }
         }, 'Xem lộ trình →')
+      );
+    })(),
+    (() => {
+      if ((!S.onboarding || !S.onboarding.done) && !ONBOARDING_SHOWN_SESSION) {
+        ONBOARDING_SHOWN_SESSION = true;
+        requestAnimationFrame(() => openOnboardingModal(false));
+      }
+      const ob = S.onboarding;
+      const goalNames = { comm30: 'Giao tiếp cấp tốc', work: 'Công việc', ielts: 'Luyện thi IELTS', foundation: 'Học từ nền tảng' };
+      return h('div', {
+        class: 'panel row between',
+        style: { padding: '8px 12px', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }
+      },
+        ob && ob.done
+          ? h('div', { class: 'row', style: { gap: '8px', alignItems: 'center', flexWrap: 'wrap' } },
+              h('span', { class: 'small', style: { fontWeight: 600 } },
+                `🎯 ${goalNames[ob.goalType] || 'Lộ trình'} · ${ob.dailyMinutes || S.goal} phút/ngày`
+              ),
+              h('span', { class: 'chip level ' + (ob.level || 'a1') }, (ob.level || 'a1').toUpperCase())
+            )
+          : h('span', { class: 'small muted' }, '✨ Xác định trình độ & mục tiêu học trong 1 phút'),
+        h('button', {
+          class: 'ghost mini',
+          style: { whiteSpace: 'nowrap', padding: '4px 10px', fontSize: '.76rem', fontWeight: 600 },
+          onclick: () => openOnboardingModal(true)
+        }, ob && ob.done ? 'Làm lại khảo sát' : 'Bắt đầu khảo sát →')
       );
     })(),
     S.lang === 'en' ? crash30HomeSection(d) : null,
