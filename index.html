@@ -3254,6 +3254,7 @@ let KNOWLEDGE_TAB = 'gram'; // 'gram' | 'chars' | 'kana'
 let EXAM_LV = { zh: 'HSK 1', ja: 'N5' };
 const TABS = [
   ['home', 'Học', ICON.home],
+  ['news', 'Đọc báo', ICON.book],
   ['exam', 'Luyện thi', ICON.exam],
   ['knowledge', 'Kiến thức', ICON.book],
   ['progress', 'Tiến độ', ICON.chart]
@@ -3308,6 +3309,7 @@ async function route() {
     if (VIEW !== 'progress') { mount(h('p', { class: 'loading' }, 'Đang tải bài học…')); await loadLang(S.lang); }
     ({
       home: homeView,
+      news: newsView,
       review: reviewView,
       skills: () => skillsView(SKILL_TAB),
       ielts: ieltsTabView,
@@ -5879,6 +5881,424 @@ function openOnboardingModal(force = false) {
   renderStep();
   document.body.appendChild(overlay);
 }
+
+function openDictationPractice() {
+  if (document.getElementById('dictation-overlay')) return;
+  const ITEMS = [
+    { lv: 'A2', en: 'What does your company do?', vi: 'Công ty của bạn hoạt động trong lĩnh vực gì?' },
+    { lv: 'A2', en: 'Where are your products made?', vi: 'Sản phẩm của bạn được sản xuất ở đâu?' },
+    { lv: 'B1', en: "Let's go through the agenda first.", vi: 'Hãy cùng xem qua chương trình họp trước nhé.' },
+    { lv: 'B1', en: 'Could you clarify the delivery date?', vi: 'Bạn có thể làm rõ ngày giao hàng được không?' },
+    { lv: 'B1', en: 'Could you take the minutes today?', vi: 'Hôm nay bạn có thể ghi biên bản cuộc họp giúp tôi không?' },
+    { lv: 'B2', en: "I'm responsible for order processing and reporting.", vi: 'Tôi phụ trách việc xử lý đơn hàng và báo cáo.' }
+  ];
+  let idx = 0;
+  let userText = '';
+  let checked = false;
+
+  const overlay = h('div', {
+    id: 'dictation-overlay',
+    style: {
+      position: 'fixed', inset: '0', zIndex: '9999',
+      background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+    }
+  });
+  const card = h('div', {
+    class: 'panel stack',
+    style: { width: '100%', maxWidth: '540px', maxHeight: '90vh', overflowY: 'auto', padding: '20px', gap: '12px', borderRadius: '18px' }
+  });
+  overlay.appendChild(card);
+
+  const norm = (s) => s.toLowerCase().replace(/[.,!?;:'"’]/g, '').replace(/\s+/g, ' ').trim();
+
+  function render() {
+    card.innerHTML = '';
+    const item = ITEMS[idx];
+    card.appendChild(h('div', { class: 'row between', style: { alignItems: 'center' } },
+      h('div', { class: 'row', style: { gap: '8px', alignItems: 'center' } },
+        h('span', { style: { fontWeight: 700, fontSize: '1.05rem' } }, '🎧 Dictation · Nghe chép chính tả'),
+        h('span', { class: 'chip level ' + item.lv.toLowerCase() }, item.lv)
+      ),
+      h('button', { class: 'ghost mini', onclick: () => overlay.remove() }, '✕')
+    ));
+    card.appendChild(h('p', { class: 'small muted', style: { margin: 0 } }, `Câu ${idx + 1}/${ITEMS.length} · Bấm loa để nghe giọng chuẩn và chép lại nguyên văn:`));
+
+    card.appendChild(h('div', {
+      class: 'row',
+      style: { gap: '10px', alignItems: 'center', padding: '12px', borderRadius: '12px', background: 'var(--bg-soft, rgba(99,102,241,0.08))' }
+    },
+      spk('en', item.en),
+      spk('en', item.en, { slow: true }),
+      h('span', { class: 'small', style: { fontWeight: 600 } }, 'Nghe thường / Nghe chậm 🐢')
+    ));
+
+    const ta = h('textarea', {
+      rows: 2,
+      value: userText,
+      placeholder: 'Gõ lại câu tiếng Anh bạn nghe được...',
+      style: {
+        width: '100%', padding: '10px 12px', borderRadius: '10px',
+        border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--ink)',
+        fontSize: '.95rem', boxSizing: 'border-box', resize: 'vertical'
+      },
+      oninput: (e) => { userText = e.target.value; }
+    });
+    card.appendChild(ta);
+
+    if (checked) {
+      const targetWords = item.en.split(/\s+/);
+      const userWords = norm(userText).split(' ').filter(Boolean);
+      const isExact = norm(userText) === norm(item.en);
+      card.appendChild(h('div', {
+        class: 'panel stack',
+        style: { gap: '6px', padding: '12px', borderRadius: '12px', background: isExact ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)' }
+      },
+        h('div', { class: 'small', style: { fontWeight: 700 } }, isExact ? '✅ Chính xác hoàn toàn!' : '🔍 Đối chiếu từng từ:'),
+        h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '6px', lineHeight: 1.6 } },
+          targetWords.map((w, i) => {
+            const ok = userWords[i] === norm(w);
+            return h('span', {
+              style: {
+                padding: '2px 6px', borderRadius: '6px', fontWeight: 600, fontSize: '.9rem',
+                background: ok ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.18)',
+                color: ok ? '#059669' : '#dc2626'
+              }
+            }, w);
+          })
+        ),
+        h('div', { class: 'small muted' }, 'Nghĩa: ' + item.vi)
+      ));
+    }
+
+    card.appendChild(h('div', { class: 'row between', style: { marginTop: '4px' } },
+      h('button', {
+        class: 'ghost small',
+        disabled: idx === 0,
+        onclick: () => { if (idx > 0) { idx--; userText = ''; checked = false; render(); } }
+      }, '← Câu trước'),
+      h('div', { class: 'row', style: { gap: '8px' } },
+        !checked ? h('button', {
+          class: 'btn',
+          onclick: () => { checked = true; render(); }
+        }, 'Kiểm tra') : null,
+        h('button', {
+          class: checked ? 'btn' : 'ghost small',
+          onclick: () => {
+            if (idx < ITEMS.length - 1) { idx++; userText = ''; checked = false; render(); }
+            else overlay.remove();
+          }
+        }, idx < ITEMS.length - 1 ? 'Câu tiếp →' : 'Hoàn thành ✓')
+      )
+    ));
+  }
+  render();
+  document.body.appendChild(overlay);
+}
+
+function openBugHunterPractice() {
+  if (document.getElementById('bughunter-overlay')) return;
+  const BUGS = [
+    {
+      lv: 'A1',
+      parts: ['She', 'go', 'to school', 'every day.'],
+      bugIdx: 1,
+      fixes: ['goes', 'going', 'is go'],
+      correctFix: 0,
+      exp: 'Chủ ngữ số ít "She" ở thì hiện tại đơn cần chia động từ thêm -es: "goes".'
+    },
+    {
+      lv: 'A2',
+      parts: ['We', 'didn’t went', 'to the party', 'last night.'],
+      bugIdx: 1,
+      fixes: ['didn’t go', 'not went', 'didn’t going'],
+      correctFix: 0,
+      exp: 'Sau trợ động từ phủ định "didn’t", động từ phải ở dạng nguyên mẫu: "didn’t go".'
+    },
+    {
+      lv: 'B1',
+      parts: ['There is', 'many people', 'waiting in', 'the lobby.'],
+      bugIdx: 0,
+      fixes: ['There are', 'There have', 'It is'],
+      correctFix: 0,
+      exp: '"many people" là danh từ số nhiều nên phải dùng "There are".'
+    },
+    {
+      lv: 'B1',
+      parts: ['I am', 'looking forward', 'to meet', 'you soon.'],
+      bugIdx: 2,
+      fixes: ['to meeting', 'for meet', 'meet'],
+      correctFix: 0,
+      exp: 'Cấu trúc "look forward to + V-ing": dùng "to meeting".'
+    },
+    {
+      lv: 'B2',
+      parts: ['Despite of', 'the heavy rain,', 'they arrived', 'on time.'],
+      bugIdx: 0,
+      fixes: ['Despite', 'Although', 'In spite'],
+      correctFix: 0,
+      exp: '"Despite" không đi với "of" (chỉ có "In spite of" hoặc "Despite").'
+    }
+  ];
+  let idx = 0;
+  let pickedPart = -1;
+  let pickedFix = -1;
+
+  const overlay = h('div', {
+    id: 'bughunter-overlay',
+    style: {
+      position: 'fixed', inset: '0', zIndex: '9999',
+      background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+    }
+  });
+  const card = h('div', {
+    class: 'panel stack',
+    style: { width: '100%', maxWidth: '540px', maxHeight: '90vh', overflowY: 'auto', padding: '20px', gap: '12px', borderRadius: '18px' }
+  });
+  overlay.appendChild(card);
+
+  function render() {
+    card.innerHTML = '';
+    const item = BUGS[idx];
+    card.appendChild(h('div', { class: 'row between', style: { alignItems: 'center' } },
+      h('div', { class: 'row', style: { gap: '8px', alignItems: 'center' } },
+        h('span', { style: { fontWeight: 700, fontSize: '1.05rem' } }, '🐞 Bug Hunter · Tìm lỗi ngữ pháp'),
+        h('span', { class: 'chip level ' + item.lv.toLowerCase() }, item.lv)
+      ),
+      h('button', { class: 'ghost mini', onclick: () => overlay.remove() }, '✕')
+    ));
+    card.appendChild(h('p', { class: 'small muted', style: { margin: 0 } }, `Câu ${idx + 1}/${BUGS.length} · Bấm vào cụm từ bị sai ngữ pháp:`));
+
+    card.appendChild(h('div', {
+      style: { display: 'flex', flexWrap: 'wrap', gap: '8px', padding: '14px', borderRadius: '12px', background: 'var(--bg-soft, rgba(99,102,241,0.06))' }
+    },
+      item.parts.map((p, i) => {
+        const isPicked = pickedPart === i;
+        const isBug = i === item.bugIdx;
+        let border = '1px solid var(--line)';
+        let bg = 'var(--bg)';
+        if (isPicked) {
+          border = isBug ? '2px solid #10b981' : '2px solid #ef4444';
+          bg = isBug ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)';
+        }
+        return h('button', {
+          class: 'ghost',
+          style: { padding: '6px 10px', borderRadius: '8px', border, background: bg, fontWeight: 600, fontSize: '.95rem' },
+          onclick: () => { pickedPart = i; pickedFix = -1; render(); }
+        }, p);
+      })
+    ));
+
+    if (pickedPart !== -1 && pickedPart !== item.bugIdx) {
+      card.appendChild(h('p', { class: 'small', style: { color: '#ef4444', margin: 0, fontWeight: 600 } }, '❌ Cụm này đúng ngữ pháp rồi. Hãy thử chọn cụm khác!'));
+    }
+
+    if (pickedPart === item.bugIdx) {
+      card.appendChild(h('div', { class: 'stack', style: { gap: '8px' } },
+        h('div', { class: 'small', style: { fontWeight: 700, color: '#059669' } }, '🎯 Đúng vị trí lỗi! Chọn cách sửa đúng:'),
+        h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap' } },
+          item.fixes.map((f, fi) => {
+            const sel = pickedFix === fi;
+            return h('button', {
+              class: sel ? 'btn' : 'ghost',
+              style: { padding: '8px 12px', borderRadius: '8px', fontWeight: 600 },
+              onclick: () => { pickedFix = fi; render(); }
+            }, f);
+          })
+        )
+      ));
+      if (pickedFix !== -1) {
+        const ok = pickedFix === item.correctFix;
+        card.appendChild(h('div', {
+          class: 'panel stack',
+          style: { gap: '4px', padding: '10px 12px', borderRadius: '10px', background: ok ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)' }
+        },
+          h('div', { class: 'small', style: { fontWeight: 700 } }, ok ? '✅ Chính xác!' : '❌ Chưa đúng, thử lại nhé!'),
+          ok ? h('div', { class: 'small' }, item.exp) : null
+        ));
+      }
+    }
+
+    card.appendChild(h('div', { class: 'row between', style: { marginTop: '4px' } },
+      h('button', {
+        class: 'ghost small',
+        disabled: idx === 0,
+        onclick: () => { if (idx > 0) { idx--; pickedPart = -1; pickedFix = -1; render(); } }
+      }, '← Câu trước'),
+      h('button', {
+        class: 'btn small',
+        onclick: () => {
+          if (idx < BUGS.length - 1) { idx++; pickedPart = -1; pickedFix = -1; render(); }
+          else overlay.remove();
+        }
+      }, idx < BUGS.length - 1 ? 'Câu tiếp →' : 'Hoàn thành ✓')
+    ));
+  }
+  render();
+  document.body.appendChild(overlay);
+}
+
+let NEWS_OPEN_ID = '';
+const NEWS_QUIZ_ANS = {};
+const NEWS_SHOW_VI = {};
+function newsView() {
+  const ARTICLES = [
+    {
+      id: 'n1', lv: 'A1', icon: '☕',
+      title: 'Morning Coffee Habits Around the World',
+      summary: 'Thói quen uống cà phê buổi sáng ở các quốc gia khác nhau.',
+      paras: [
+        { en: 'Millions of people start their day with a cup of coffee.', vi: 'Hàng triệu người bắt đầu ngày mới bằng một tách cà phê.' },
+        { en: 'In Italy, people often drink espresso quickly at a bar.', vi: 'Ở Ý, mọi người thường uống espresso rất nhanh tại quầy bar.' },
+        { en: 'In Vietnam, iced milk coffee is a popular morning choice.', vi: 'Ở Việt Nam, cà phê sữa đá là lựa chọn buổi sáng phổ biến.' }
+      ],
+      vocab: [
+        { w: 'habit', m: 'thói quen' },
+        { w: 'popular', m: 'phổ biến' },
+        { w: 'choice', m: 'lựa chọn' }
+      ],
+      quiz: {
+        q: 'How do people in Italy often drink espresso?',
+        opts: ['Quickly at a bar', 'With lots of ice', 'Only at night'],
+        ans: 0
+      }
+    },
+    {
+      id: 'n2', lv: 'A2', icon: '💻',
+      title: 'Remote Work Changes City Life',
+      summary: 'Làm việc từ xa đang thay đổi nhịp sống đô thị như thế nào.',
+      paras: [
+        { en: 'More companies now allow employees to work from home twice a week.', vi: 'Nhiều công ty hiện cho phép nhân viên làm việc tại nhà hai lần một tuần.' },
+        { en: 'This reduces morning traffic and gives workers more time for family.', vi: 'Điều này giúp giảm kẹt xe buổi sáng và cho người lao động thêm thời gian bên gia đình.' }
+      ],
+      vocab: [
+        { w: 'employee', m: 'nhân viên' },
+        { w: 'reduce', m: 'giảm bớt' },
+        { w: 'traffic', m: 'giao thông' }
+      ],
+      quiz: {
+        q: 'What is one benefit of working from home mentioned in the article?',
+        opts: ['Less morning traffic', 'Higher office rent', 'Longer commute'],
+        ans: 0
+      }
+    },
+    {
+      id: 'n3', lv: 'B1', icon: '🌱',
+      title: 'Green Rooftops Cool Down Big Cities',
+      summary: 'Mái nhà xanh giúp hạ nhiệt các thành phố lớn vào mùa hè.',
+      paras: [
+        { en: 'Urban planners are turning empty rooftops into small gardens.', vi: 'Các nhà quy hoạch đô thị đang biến những sân thượng trống thành khu vườn nhỏ.' },
+        { en: 'Plants absorb heat, lower energy bills, and improve air quality for residents.', vi: 'Cây xanh hấp thụ nhiệt, giảm hóa đơn tiền điện và cải thiện chất lượng không khí cho cư dân.' }
+      ],
+      vocab: [
+        { w: 'absorb', m: 'hấp thụ' },
+        { w: 'resident', m: 'cư dân' },
+        { w: 'air quality', m: 'chất lượng không khí' }
+      ],
+      quiz: {
+        q: 'How do green rooftops help residents?',
+        opts: ['They lower energy bills and clean the air', 'They increase summer heat', 'They replace public parks'],
+        ans: 0
+      }
+    },
+    {
+      id: 'n4', lv: 'B2', icon: '🤖',
+      title: 'AI Tools Support Language Learners',
+      summary: 'Công cụ AI hỗ trợ người học ngoại ngữ luyện tập chủ động hơn.',
+      paras: [
+        { en: 'Modern language apps combine spaced repetition with instant feedback.', vi: 'Các ứng dụng học ngoại ngữ hiện đại kết hợp lặp lại ngắt quãng với phản hồi tức thì.' },
+        { en: 'Instead of memorizing isolated words, learners practice sentences in real contexts.', vi: 'Thay vì học thuộc từ đơn lẻ, người học luyện câu trong ngữ cảnh thực tế.' }
+      ],
+      vocab: [
+        { w: 'instant feedback', m: 'phản hồi tức thì' },
+        { w: 'isolated', m: 'đơn lẻ, tách biệt' },
+        { w: 'context', m: 'ngữ cảnh' }
+      ],
+      quiz: {
+        q: 'What is recommended instead of memorizing isolated words?',
+        opts: ['Practicing sentences in real contexts', 'Skipping listening exercises', 'Studying only grammar rules'],
+        ans: 0
+      }
+    }
+  ];
+
+  mount(h('div', { class: 'stack', style: { gap: '12px' } },
+    h('div', { class: 'panel stack', style: { gap: '4px', padding: '14px' } },
+      h('h2', { style: { margin: 0, fontSize: '1.2rem' } }, '📰 Đọc báo Song ngữ (Reading Discussion)'),
+      h('p', { class: 'small muted', style: { margin: 0 } }, 'Chọn bài báo theo trình độ để đọc hiểu, tra nghĩa từng câu và làm quiz.')
+    ),
+    ARTICLES.map((art) => {
+      const isOpen = NEWS_OPEN_ID === art.id;
+      const showVi = !!NEWS_SHOW_VI[art.id];
+      const qAns = NEWS_QUIZ_ANS[art.id];
+      return h('div', { class: 'acc-card' },
+        h('button', {
+          class: 'acc-head',
+          'aria-expanded': String(isOpen),
+          onclick: () => { NEWS_OPEN_ID = isOpen ? '' : art.id; newsView(); }
+        },
+          h('div', { class: 'row', style: { gap: '10px', alignItems: 'center', flex: 1, minWidth: 0 } },
+            h('span', { style: { fontSize: '1.35rem' } }, art.icon),
+            h('div', { class: 'stack', style: { gap: '2px', textAlign: 'left', minWidth: 0 } },
+              h('div', { style: { fontWeight: 700, fontSize: '.96rem' } }, art.title),
+              h('div', { class: 'small muted', style: { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, art.summary)
+            )
+          ),
+          h('div', { class: 'row', style: { gap: '8px', alignItems: 'center', flexShrink: 0 } },
+            h('span', { class: 'chip level ' + art.lv.toLowerCase() }, art.lv),
+            h('span', { class: 'small muted' }, isOpen ? '▴' : '▾')
+          )
+        ),
+        isOpen ? h('div', { class: 'acc-body stack', style: { gap: '12px', paddingTop: '10px' } },
+          h('div', { class: 'row between', style: { alignItems: 'center' } },
+            h('span', { class: 'small', style: { fontWeight: 700 } }, 'Nội dung bài đọc'),
+            h('button', {
+              class: 'ghost mini',
+              onclick: () => { NEWS_SHOW_VI[art.id] = !showVi; newsView(); }
+            }, showVi ? 'Ẩn dịch tiếng Việt' : 'Hiện dịch tiếng Việt')
+          ),
+          h('div', { class: 'stack', style: { gap: '8px' } },
+            art.paras.map((p) => h('div', {
+              class: 'panel stack',
+              style: { gap: '4px', padding: '10px 12px', borderRadius: '10px', background: 'var(--bg-soft, rgba(99,102,241,0.05))' }
+            },
+              h('div', { style: { fontSize: '.95rem', lineHeight: 1.55, fontWeight: 500 } }, p.en),
+              showVi ? h('div', { class: 'small muted', style: { lineHeight: 1.45 } }, p.vi) : null
+            ))
+          ),
+          h('div', { class: 'stack', style: { gap: '6px' } },
+            h('span', { class: 'small', style: { fontWeight: 700 } }, 'Từ vựng nổi bật'),
+            h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap' } },
+              art.vocab.map((v) => h('span', { class: 'chip' }, `${v.w}: ${v.m}`))
+            )
+          ),
+          h('div', { class: 'panel stack', style: { gap: '8px', padding: '12px', borderRadius: '12px' } },
+            h('div', { class: 'small', style: { fontWeight: 700 } }, '❓ Quiz đọc hiểu: ' + art.quiz.q),
+            h('div', { class: 'stack', style: { gap: '6px' } },
+              art.quiz.opts.map((opt, oi) => {
+                const sel = qAns === oi;
+                const ok = oi === art.quiz.ans;
+                return h('button', {
+                  class: sel ? 'btn small' : 'ghost small',
+                  style: {
+                    textAlign: 'left', justifyContent: 'flex-start',
+                    border: sel ? (ok ? '2px solid #10b981' : '2px solid #ef4444') : undefined
+                  },
+                  onclick: () => { NEWS_QUIZ_ANS[art.id] = oi; newsView(); }
+                }, `${String.fromCharCode(65 + oi)}. ${opt}`);
+              })
+            ),
+            qAns !== undefined ? h('div', {
+              class: 'small',
+              style: { fontWeight: 700, color: qAns === art.quiz.ans ? '#059669' : '#dc2626' }
+            }, qAns === art.quiz.ans ? '✅ Chính xác!' : '❌ Chưa đúng, hãy đọc lại đoạn văn nhé!') : null
+          )
+        ) : null
+      );
+    })
+  ));
+}
 function homeView() {
   const d = DATA[S.lang], st = streak(), xp = xpOf(todayN(), S.lang), due = dueIn(S.lang);
   const langCats = CATEGORIES[S.lang];
@@ -6083,6 +6503,18 @@ function homeView() {
         }, ob && ob.done ? 'Làm lại khảo sát' : 'Bắt đầu khảo sát →')
       );
     })(),
+    h('div', { class: 'row', style: { gap: '8px' } },
+      h('button', {
+        class: 'panel row',
+        style: { flex: 1, padding: '10px 12px', gap: '8px', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontWeight: 700, fontSize: '.86rem' },
+        onclick: openDictationPractice
+      }, '🎧 Dictation (Chép chính tả)'),
+      h('button', {
+        class: 'panel row',
+        style: { flex: 1, padding: '10px 12px', gap: '8px', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontWeight: 700, fontSize: '.86rem' },
+        onclick: openBugHunterPractice
+      }, '🐞 Bug Hunter (Tìm lỗi)')
+    ),
     S.lang === 'en' ? crash30HomeSection(d) : null,
     catBar,
     (() => {
