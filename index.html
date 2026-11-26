@@ -3253,11 +3253,12 @@ let SKILL_TAB = 'speak'; // 'speak' | 'write'
 let KNOWLEDGE_TAB = 'gram'; // 'gram' | 'chars' | 'kana'
 let EXAM_LV = { zh: 'HSK 1', ja: 'N5' };
 const TABS = [
-  ['home', 'Học', ICON.home],
-  ['news', 'Đọc báo', ICON.book],
-  ['exam', 'Luyện thi', ICON.exam],
-  ['knowledge', 'Kiến thức', ICON.book],
-  ['progress', 'Tiến độ', ICON.chart]
+  ['home', 'Trang chủ', ICON.home],
+  ['dictation', 'Dictation & Shadowing', ICON.book],
+  ['review', 'Từ vựng', ICON.book],
+  ['practice', 'Luyện tập', ICON.exam],
+  ['games', 'Trò chơi', ICON.home],
+  ['exam', 'Luyện thi', ICON.exam]
 ];
 function setTabs(show) {
   const nav = document.getElementById('tabs'); nav.hidden = !show;
@@ -3267,16 +3268,17 @@ function setTabs(show) {
   const code = S.lang;
   const tabsList = TABS.map(([k, label, d]) => {
     if (k === 'exam') {
-      const examLabel = code === 'en' ? 'Luyện IELTS' : (code === 'zh' ? 'Luyện HSKK' : 'Luyện JLPT');
+      const examLabel = code === 'en' ? 'Luyện thi' : (code === 'zh' ? 'Luyện HSKK' : 'Luyện JLPT');
       return [k, examLabel, d];
     }
     return [k, label, d];
   });
   nav.replaceChildren(...tabsList.map(([k, label, d]) => {
     const isCur = (VIEW === k) ||
-      (k === 'home' && (VIEW === 'home' || VIEW === 'review')) ||
-      (k === 'exam' && (VIEW === 'exam' || VIEW === 'ielts')) ||
-      (k === 'knowledge' && (VIEW === 'knowledge' || VIEW === 'grammar' || VIEW === 'kanji'));
+      (k === 'home' && VIEW === 'home') ||
+      (k === 'review' && (VIEW === 'review' || VIEW === 'dict')) ||
+      (k === 'practice' && (VIEW === 'practice' || VIEW === 'news' || VIEW === 'knowledge' || VIEW === 'grammar')) ||
+      (k === 'exam' && (VIEW === 'exam' || VIEW === 'ielts'));
     return h('button', {
       'aria-current': isCur ? 'page' : null,
       onclick: () => go(k)
@@ -3309,6 +3311,9 @@ async function route() {
     if (VIEW !== 'progress') { mount(h('p', { class: 'loading' }, 'Đang tải bài học…')); await loadLang(S.lang); }
     ({
       home: homeView,
+      dictation: dictationTabView,
+      practice: practiceTabView,
+      games: gamesTabView,
       news: newsView,
       review: reviewView,
       skills: () => skillsView(SKILL_TAB),
@@ -6437,6 +6442,140 @@ function newsView() {
       );
     })
   ));
+}
+function dictationTabView() {
+  mount(h('div', { class: 'stack', style: { gap: '12px' } },
+    h('div', { class: 'panel stack', style: { gap: '4px', padding: '14px' } },
+      h('h2', { style: { margin: 0, fontSize: '1.2rem' } }, '🎧 Dictation & Shadowing'),
+      h('p', { class: 'small muted', style: { margin: 0 } }, 'Luyện nghe chép chính tả và nói đuổi theo giọng chuẩn người thật.')
+    ),
+    h('div', { class: 'acc-card' },
+      h('button', { class: 'acc-head', onclick: openDictationPractice },
+        h('div', { class: 'row', style: { gap: '10px', alignItems: 'center' } },
+          h('span', { style: { fontSize: '1.35rem' } }, '🎧'),
+          h('div', { class: 'stack', style: { gap: '2px', textAlign: 'left' } },
+            h('div', { style: { fontWeight: 700 } }, 'Dictation · Nghe chép chính tả'),
+            h('div', { class: 'small muted' }, 'Nghe từng câu chuẩn bản xứ, chép lại và đối chiếu từng từ.')
+          )
+        ),
+        h('span', { class: 'chip' }, 'Bắt đầu →')
+      )
+    ),
+    h('div', { class: 'acc-card' },
+      h('button', { class: 'acc-head', onclick: () => { SKILL_TAB = 'speak'; go('skills'); } },
+        h('div', { class: 'row', style: { gap: '10px', alignItems: 'center' } },
+          h('span', { style: { fontSize: '1.35rem' } }, '🗣️'),
+          h('div', { class: 'stack', style: { gap: '2px', textAlign: 'left' } },
+            h('div', { style: { fontWeight: 700 } }, 'Shadowing · Luyện nói đuổi'),
+            h('div', { class: 'small muted' }, 'Nghe câu mẫu, lặp lại theo nhịp và trọng âm để luyện phản xạ nói.')
+          )
+        ),
+        h('span', { class: 'chip' }, 'Bắt đầu →')
+      )
+    )
+  ));
+}
+
+function practiceTabView() {
+  const items = [
+    { icon: '🐞', title: 'Bug Hunter · Tìm lỗi ngữ pháp', desc: 'Nhận diện vị trí lỗi sai trong câu và chọn cách sửa đúng.', badge: 'Ngữ pháp', fn: openBugHunterPractice },
+    { icon: '🧩', title: 'Ghép câu · Cụm động từ (Phrasal Verbs)', desc: 'Chọn Động từ + Từ đi kèm để hoàn thành câu hoàn chỉnh.', badge: 'Cụm từ', fn: openSentenceBuilderPractice },
+    { icon: '📰', title: 'Đọc báo Song ngữ (Reading Discussion)', desc: 'Đọc bài báo theo cấp độ A1–B2, tra nghĩa và làm quiz.', badge: 'Đọc hiểu', fn: () => go('news') },
+    { icon: '📘', title: 'Ngữ pháp CEFR (A1–B2)', desc: 'Hệ thống lý thuyết ngữ pháp và bài tập trắc nghiệm theo cấp độ.', badge: 'CEFR', fn: () => go('grammar') }
+  ];
+  mount(h('div', { class: 'stack', style: { gap: '12px' } },
+    h('div', { class: 'panel stack', style: { gap: '4px', padding: '14px' } },
+      h('h2', { style: { margin: 0, fontSize: '1.2rem' } }, '🏋️ Luyện tập tổng hợp'),
+      h('p', { class: 'small muted', style: { margin: 0 } }, 'Chọn kỹ năng bạn muốn rèn luyện thêm hôm nay.')
+    ),
+    items.map((it) => h('div', { class: 'acc-card' },
+      h('button', { class: 'acc-head', onclick: it.fn },
+        h('div', { class: 'row', style: { gap: '10px', alignItems: 'center', flex: 1, minWidth: 0 } },
+          h('span', { style: { fontSize: '1.35rem' } }, it.icon),
+          h('div', { class: 'stack', style: { gap: '2px', textAlign: 'left', minWidth: 0 } },
+            h('div', { style: { fontWeight: 700, fontSize: '.96rem' } }, it.title),
+            h('div', { class: 'small muted' }, it.desc)
+          )
+        ),
+        h('span', { class: 'chip' }, it.badge)
+      )
+    ))
+  ));
+}
+
+function gamesTabView() {
+  const PAIRS = [
+    { en: 'agenda', vi: 'chương trình họp' },
+    { en: 'supplier', vi: 'nhà cung cấp' },
+    { en: 'delivery', vi: 'giao hàng' },
+    { en: 'clarify', vi: 'làm rõ' },
+    { en: 'absorb', vi: 'hấp thụ' },
+    { en: 'resident', vi: 'cư dân' }
+  ];
+  let selEn = null, selVi = null;
+  const matched = new Set();
+  const viList = [...PAIRS].sort((a, b) => a.vi.localeCompare(b.vi));
+
+  function renderGame() {
+    mount(h('div', { class: 'stack', style: { gap: '12px' } },
+      h('div', { class: 'panel row between', style: { padding: '14px', alignItems: 'center' } },
+        h('div', { class: 'stack', style: { gap: '2px' } },
+          h('h2', { style: { margin: 0, fontSize: '1.2rem' } }, '🎮 Trò chơi · Ghép cặp Từ – Nghĩa'),
+          h('p', { class: 'small muted', style: { margin: 0 } }, `Đã ghép: ${matched.size}/${PAIRS.length} cặp`)
+        ),
+        h('button', { class: 'ghost mini', onclick: () => { matched.clear(); selEn = null; selVi = null; renderGame(); } }, 'Chơi lại')
+      ),
+      matched.size === PAIRS.length
+        ? h('div', { class: 'panel stack center', style: { padding: '20px', gap: '8px', background: 'rgba(16,185,129,0.1)' } },
+            h('div', { style: { fontSize: '1.5rem' } }, '🎉'),
+            h('div', { style: { fontWeight: 700 } }, 'Tuyệt vời! Bạn đã ghép đúng toàn bộ!'),
+            h('button', { class: 'btn small', onclick: () => { matched.clear(); selEn = null; selVi = null; renderGame(); } }, 'Chơi ván mới')
+          )
+        : h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' } },
+            h('div', { class: 'stack', style: { gap: '8px' } },
+              PAIRS.map((p) => {
+                const done = matched.has(p.en);
+                const active = selEn === p.en;
+                return h('button', {
+                  class: active ? 'btn' : 'ghost',
+                  disabled: done,
+                  style: { opacity: done ? 0.35 : 1, fontWeight: 700 },
+                  onclick: () => {
+                    selEn = p.en;
+                    if (selVi) {
+                      const found = PAIRS.find((x) => x.en === selEn && x.vi === selVi);
+                      if (found) matched.add(found.en);
+                      selEn = null; selVi = null;
+                    }
+                    renderGame();
+                  }
+                }, p.en);
+              })
+            ),
+            h('div', { class: 'stack', style: { gap: '8px' } },
+              viList.map((p) => {
+                const done = matched.has(p.en);
+                const active = selVi === p.vi;
+                return h('button', {
+                  class: active ? 'btn' : 'ghost',
+                  disabled: done,
+                  style: { opacity: done ? 0.35 : 1 },
+                  onclick: () => {
+                    selVi = p.vi;
+                    if (selEn) {
+                      const found = PAIRS.find((x) => x.en === selEn && x.vi === selVi);
+                      if (found) matched.add(found.en);
+                      selEn = null; selVi = null;
+                    }
+                    renderGame();
+                  }
+                }, p.vi);
+              })
+            )
+          )
+    ));
+  }
+  renderGame();
 }
 function homeView() {
   const d = DATA[S.lang], st = streak(), xp = xpOf(todayN(), S.lang), due = dueIn(S.lang);
