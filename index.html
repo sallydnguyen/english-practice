@@ -167,7 +167,7 @@ select { width: 100%; }
 .lesson.next { border: 2px solid var(--teal); }
 .lesson .meta { flex: 1; min-width: 0; }
 .sec-acc { border: none; border-radius: 0; background: transparent; overflow: visible; }
-summary.sec-hdr {
+.sec-hdr {
   width: 100%; border: 2px solid var(--line); border-radius: 18px; background: var(--surface);
   padding: 13px 15px; display: flex; align-items: center; justify-content: space-between;
   gap: 12px; text-align: left; cursor: pointer; list-style: none; user-select: none;
@@ -175,7 +175,7 @@ summary.sec-hdr {
   transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
 }
 summary.sec-hdr::-webkit-details-marker { display: none; }
-summary.sec-hdr .acc-arrow { transition: transform .18s ease; opacity: .85; flex: none; font-size: .9rem; color: var(--sec-col, var(--muted)); }
+.sec-hdr .acc-arrow { transition: transform .18s ease; opacity: .85; flex: none; font-size: .9rem; color: var(--sec-col, var(--muted)); }
 .sec-ico {
   width: 46px; height: 46px; border-radius: 14px; flex: none;
   display: grid; place-items: center; font-size: 1.5rem; line-height: 1;
@@ -190,14 +190,24 @@ summary.sec-hdr .acc-arrow { transition: transform .18s ease; opacity: .85; flex
   margin-top: 6px; overflow: hidden; width: 100%;
 }
 .sec-prog > i { display: block; height: 100%; background: var(--sec-col, #58cc02); border-radius: 99px; transition: width .3s ease; }
-details.sec-acc.sec-featured > summary.sec-hdr,
-details.sec-acc[open] > summary.sec-hdr {
+.sec-acc.sec-featured > .sec-hdr,
+details.sec-acc[open] > .sec-hdr {
   border-color: var(--sec-col, #58cc02);
   background: linear-gradient(135deg, var(--sec-soft, rgba(88, 204, 2, .16)) 0%, var(--surface) 100%);
   box-shadow: 0 4px 0 var(--sec-lip, rgba(70, 163, 2, .4)), 0 8px 22px var(--sec-glow, rgba(88, 204, 2, .22));
 }
-details.sec-acc[open] > summary.sec-hdr .acc-arrow { transform: rotate(180deg); }
+details.sec-acc[open] > .sec-hdr .acc-arrow { transform: rotate(180deg); }
 .sec-body { padding: 14px 0 6px; display: flex; flex-direction: column; gap: 16px; }
+.sec-test-btn {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  min-height: 36px; padding: 6px 12px; border-radius: 12px; border: none;
+  background: var(--sec-col, #58cc02); color: #fff;
+  box-shadow: 0 3px 0 var(--sec-lip, #46a302);
+  font-size: .74rem; font-weight: 800; letter-spacing: .05em;
+  text-transform: uppercase; cursor: pointer; white-space: nowrap;
+}
+.sec-test-btn:hover { filter: brightness(1.07); }
+.sec-test-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--sec-lip, #46a302); }
 .duo-unit { border: none; border-radius: 0; background: transparent; overflow: visible; margin-bottom: 4px; }
 summary.duo-unit-hdr {
   width: 100%; border: none; border-radius: 16px; padding: 14px 16px;
@@ -1442,7 +1452,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/en.json và data/ielts_30day_listening.js,
    âm thanh thu sẵn nằm trong audio/ (audio/w*.json, audio/mail/, audio/listen/, audio/ielts/).
    ===================================================================== */
-const APP_BUILD_ID = '20261126-0930';
+const APP_BUILD_ID = '20261126-0945';
 const LANGS = {
   en: { label: 'English', vi: 'Tiếng Anh', short: 'Anh', folder: '', tts: 'en-US', rec: 'en-US', lang: 'en', cjk: false },
 };
@@ -8070,15 +8080,68 @@ function homeView(opts = {}) {
       );
     };
 
+    const secThemes = [
+      { col: '#58cc02', soft: 'rgba(88, 204, 2, .16)', border: 'rgba(88, 204, 2, .45)', lip: '#46a302', glow: 'rgba(88, 204, 2, .22)' },
+      { col: '#1cb0f6', soft: 'rgba(28, 176, 246, .14)', border: 'rgba(28, 176, 246, .4)', lip: '#148ec9', glow: 'rgba(28, 176, 246, .18)' },
+      { col: '#ce82ff', soft: 'rgba(206, 130, 255, .14)', border: 'rgba(206, 130, 255, .4)', lip: '#a560e8', glow: 'rgba(206, 130, 255, .18)' },
+      { col: '#ff9600', soft: 'rgba(255, 150, 0, .14)', border: 'rgba(255, 150, 0, .4)', lip: '#cc7800', glow: 'rgba(255, 150, 0, .18)' },
+      { col: '#14b8a6', soft: 'rgba(20, 184, 166, .14)', border: 'rgba(20, 184, 166, .4)', lip: '#0d9488', glow: 'rgba(20, 184, 166, .18)' },
+      { col: '#d97706', soft: 'rgba(234, 179, 8, .15)', border: 'rgba(234, 179, 8, .42)', lip: '#b45309', glow: 'rgba(234, 179, 8, .18)' }
+    ];
+
+    const makeSecHdr = (sec, secHasNx, { interactive = true } = {}) => {
+      const doneSec = sec.topics.filter((t) => topicDone(t)).length;
+      const pctSec = sec.topics.length ? Math.round((doneSec / sec.topics.length) * 100) : 0;
+      return h(interactive ? 'summary' : 'div', { class: 'sec-hdr', style: interactive ? null : { cursor: 'default' } },
+        h('div', { class: 'row', style: { gap: '12px', alignItems: 'center', minWidth: 0, flex: 1 } },
+          h('div', { class: 'sec-ico', 'aria-hidden': 'true' }, sec.icon),
+          h('div', { class: 'stack', style: { gap: '2px', minWidth: 0, flex: 1 } },
+            h('div', { class: 'row', style: { gap: '6px', alignItems: 'center', flexWrap: 'wrap' } },
+              h('span', { class: 'sec-kicker' }, `SECTION ${sec.num}${secHasNx ? ' · ĐANG HỌC' : ''}`),
+              sec.level ? h('span', { class: 'chip level ' + sec.level.toLowerCase().replace(/\s+/g, '') }, sec.level) : null,
+              h('span', { class: 'small muted', style: { fontSize: '.72rem' } }, `${sec.units.length} Unit · ${doneSec}/${sec.topics.length}`)
+            ),
+            h('b', { style: { fontSize: '1.03rem', fontWeight: 800, lineHeight: 1.25 } }, sec.name),
+            h('div', { class: 'sec-prog' }, h('i', { style: { width: pctSec + '%' } }))
+          )
+        ),
+        h('button', {
+          type: 'button',
+          class: 'sec-test-btn',
+          title: `Học vượt cấp toàn bộ Section ${sec.num} (${sec.level || sec.name}) · Đạt ≥ 80% để pass cả Section`,
+          onclick: (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            startCategoryExam(S.lang, sec.catObj || {
+              id: sec.id,
+              level: sec.level || ('Section ' + sec.num),
+              short: sec.short || sec.name,
+              name: sec.name
+            }, sec.topics);
+          }
+        }, 'TEST'),
+        interactive ? h('span', { class: 'acc-arrow', 'aria-hidden': 'true' }, '▾') : null
+      );
+    };
+
     const wrap = h('div', { class: 'stack', style: { gap: '14px' } });
     if (visibleSections.length === 1) {
       const sec = visibleSections[0];
       const secHasNx = !!(nx && sec.topics.includes(nx.t));
+      const st = secThemes[(sec.num - 1) % secThemes.length];
       wrap.append(h('div', { class: 'acc-toolbar' },
         h('span', { class: 'small muted', style: { fontWeight: 600 } }, `${sec.icon} Section ${sec.num} (${sec.level}) · ${sec.units.length} Unit · ${sec.topics.length} chủ đề`),
         sec.units.length > 1 ? makeToggleAllBtn(() => wrap, 'details.duo-unit') : null
       ));
-      sec.units.forEach((u, ui) => wrap.append(renderUnit(u, ui, secHasNx, sec.units.length)));
+      wrap.append(h('div', {
+        class: 'sec-acc sec-featured',
+        style: { '--sec-col': st.col, '--sec-soft': st.soft, '--sec-border': st.border, '--sec-lip': st.lip, '--sec-glow': st.glow }
+      },
+        makeSecHdr(sec, secHasNx, { interactive: false }),
+        h('div', { class: 'sec-body' },
+          ...sec.units.map((u, ui) => renderUnit(u, ui, secHasNx, sec.units.length))
+        )
+      ));
       return wrap;
     }
 
@@ -8088,19 +8151,8 @@ function homeView(opts = {}) {
       makeToggleAllBtn(() => wrap, 'details.sec-acc', { groupSelector: 'details.duo-unit' })
     ));
 
-    const secThemes = [
-      { col: '#58cc02', soft: 'rgba(88, 204, 2, .16)', border: 'rgba(88, 204, 2, .45)', lip: 'rgba(70, 163, 2, .45)', glow: 'rgba(88, 204, 2, .22)' },
-      { col: '#1cb0f6', soft: 'rgba(28, 176, 246, .14)', border: 'rgba(28, 176, 246, .4)', lip: 'rgba(20, 142, 201, .4)', glow: 'rgba(28, 176, 246, .18)' },
-      { col: '#ce82ff', soft: 'rgba(206, 130, 255, .14)', border: 'rgba(206, 130, 255, .4)', lip: 'rgba(165, 96, 232, .4)', glow: 'rgba(206, 130, 255, .18)' },
-      { col: '#ff9600', soft: 'rgba(255, 150, 0, .14)', border: 'rgba(255, 150, 0, .4)', lip: 'rgba(204, 120, 0, .4)', glow: 'rgba(255, 150, 0, .18)' },
-      { col: '#14b8a6', soft: 'rgba(20, 184, 166, .14)', border: 'rgba(20, 184, 166, .4)', lip: 'rgba(13, 148, 136, .4)', glow: 'rgba(20, 184, 166, .18)' },
-      { col: '#eab308', soft: 'rgba(234, 179, 8, .15)', border: 'rgba(234, 179, 8, .42)', lip: 'rgba(202, 138, 4, .4)', glow: 'rgba(234, 179, 8, .18)' }
-    ];
-
     visibleSections.forEach((sec, secIdx) => {
       const sKey = S.lang + ':sec:' + sec.id;
-      const doneSec = sec.topics.filter((t) => topicDone(t)).length;
-      const pctSec = sec.topics.length ? Math.round((doneSec / sec.topics.length) * 100) : 0;
       const secHasNx = !!(nx && sec.topics.includes(nx.t));
       const defSecOpen = secHasNx || (obStartLv && sec.id === obStartLv) || (!nx && !obStartLv && secIdx === 0);
       const isSecOpen = openPhases.has(sKey) || (defSecOpen && !closedPhases.has(sKey));
@@ -8118,21 +8170,7 @@ function homeView(opts = {}) {
       if (isSecOpen) secAttrs.open = 'open';
 
       wrap.append(h('details', secAttrs,
-        h('summary', { class: 'sec-hdr' },
-          h('div', { class: 'row', style: { gap: '12px', alignItems: 'center', minWidth: 0, flex: 1 } },
-            h('div', { class: 'sec-ico', 'aria-hidden': 'true' }, sec.icon),
-            h('div', { class: 'stack', style: { gap: '2px', minWidth: 0, flex: 1 } },
-              h('div', { class: 'row', style: { gap: '6px', alignItems: 'center', flexWrap: 'wrap' } },
-                h('span', { class: 'sec-kicker' }, `SECTION ${sec.num}${secHasNx ? ' · ĐANG HỌC' : ''}`),
-                sec.level ? h('span', { class: 'chip level ' + sec.level.toLowerCase().replace(/\s+/g, '') }, sec.level) : null,
-                h('span', { class: 'small muted', style: { fontSize: '.72rem' } }, `${sec.units.length} Unit · ${doneSec}/${sec.topics.length}`)
-              ),
-              h('b', { style: { fontSize: '1.03rem', fontWeight: 800, lineHeight: 1.25 } }, sec.name),
-              h('div', { class: 'sec-prog' }, h('i', { style: { width: pctSec + '%' } }))
-            )
-          ),
-          h('span', { class: 'acc-arrow', 'aria-hidden': 'true' }, '▾')
-        ),
+        makeSecHdr(sec, secHasNx, { interactive: true }),
         h('div', { class: 'sec-body' },
           ...sec.units.map((u, ui) => renderUnit(u, ui, secHasNx, sec.units.length))
         )
@@ -8189,7 +8227,7 @@ function homeView(opts = {}) {
     topicsNode,
     catExamCard,
     metaFooterCard,
-    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.14 · Section (Cấp độ) & Unit')));
+    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.15 · Section (Cấp độ) & Unit')));
   if (_keepY != null) window.scrollTo(0, _keepY);
 }
 

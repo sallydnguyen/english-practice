@@ -1,5 +1,5 @@
 {
-  "version": "4.14",
-  "build": "20261126-0930",
-  "message": "Làm nổi bật khung tiêu đề Section 1 với viền sáng, nền gradient và thanh tiến độ"
+  "version": "4.15",
+  "build": "20261126-0945",
+  "message": "Thêm nút TEST học vượt cấp cho từng Section (A1–C2) và từng Unit"
 }
