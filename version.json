@@ -1,5 +1,5 @@
 {
-  "version": "4.20",
-  "build": "20261127-0445",
-  "message": "Tạo nhiều bộ đề vượt cấp & xáo trộn câu hỏi (xào chẻ từ vựng, nghe, đọc hiểu, điền câu & email trong toàn cấp)"
+  "version": "4.21",
+  "build": "20261127-0510",
+  "message": "Chỉ tính thời gian học khi thật sự bấm vào học/luyện tập, dừng đếm khi ở trang chủ hoặc màn hình chờ"
 }

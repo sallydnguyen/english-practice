@@ -1377,7 +1377,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/en.json và data/ielts_30day_listening.js,
    âm thanh thu sẵn nằm trong audio/ (audio/w*.json, audio/mail/, audio/listen/, audio/ielts/).
    ===================================================================== */
-const APP_BUILD_ID = '20261127-0445';
+const APP_BUILD_ID = '20261127-0510';
 const LANGS = {
   en: { label: 'English', vi: 'Tiếng Anh', short: 'Anh', folder: '', tts: 'en-US', rec: 'en-US', lang: 'en', cjk: false },
 };
@@ -1692,7 +1692,7 @@ function buildCurriculumSections(code, d) {
   }).filter((s) => s.topics.length > 0);
 }
 let subjectsOpen = false;
-const fresh = () => ({ v: 2, name: '', goal: 20, lang: 'en', enCat: 'all', enUnit: 'all', zhCat: 'hsk1', jaCat: 'n5', onboarding: null, days: {}, dl: {}, pv: {}, srs: {}, lessons: {}, spoken: {}, written: {}, fill: {}, gq: {}, catExams: {}, en_crash30: {}, dictation: {}, dictationErrors: {}, ach: {}, del: {}, delAll: 0, t: 0 });
+const fresh = () => ({ v: 2, name: '', goal: 20, lang: 'en', enCat: 'all', enUnit: 'all', zhCat: 'hsk1', jaCat: 'n5', onboarding: null, days: {}, dl: {}, pv: {}, srs: {}, lessons: {}, spoken: {}, written: {}, fill: {}, gq: {}, catExams: {}, studySec: { d: 0, s: 0 }, en_crash30: {}, dictation: {}, dictationErrors: {}, ach: {}, del: {}, delAll: 0, t: 0 });
 let S = fresh();
 try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch (e) { /* bị chặn lưu trữ */ }
 S.lang = 'en';
@@ -1771,6 +1771,13 @@ function mergeState(a, b) {
     };
   }
   out.ielts_challenge = Object.assign({}, older.ielts_challenge, newer.ielts_challenge);
+  {
+    const aSec = (older && older.studySec) || { d: 0, s: 0 };
+    const bSec = (newer && newer.studySec) || { d: 0, s: 0 };
+    if ((bSec.d || 0) > (aSec.d || 0)) out.studySec = { d: bSec.d || 0, s: bSec.s || 0 };
+    else if ((aSec.d || 0) > (bSec.d || 0)) out.studySec = { d: aSec.d || 0, s: aSec.s || 0 };
+    else out.studySec = { d: bSec.d || aSec.d || 0, s: Math.max(aSec.s || 0, bSec.s || 0) };
+  }
   out.en_crash30 = Object.assign({}, older.en_crash30, newer.en_crash30);
   out.ach = Object.assign({}, older.ach, newer.ach);
   out.name = newer.name || older.name;
@@ -2003,12 +2010,82 @@ function addXp(n, code = S.lang) {
   save();
   if (!before && metGoal(t, code)) setTimeout(() => toast('Đạt mục tiêu ' + goal(code, t) + ' phút học ' + LANGS[code].short + ' hôm nay! 🎉'), 300);
 }
-const XP_ITEM = 0; // Tính tiến độ theo thời gian học (phút), không cộng XP theo từng từ
-setInterval(() => {
-  if (typeof document !== 'undefined' && document.visibilityState === 'visible' && S && S.name) {
-    addXp(1, S.lang || 'en');
+const XP_ITEM = 0; // Tính tiến độ theo thời gian học thực tế (phút), không cộng XP theo từng từ
+let STUDY_STEP_ACTIVE = false;
+let CRASH30_DAY_ACTIVE = false;
+let REVIEW_IN_PROGRESS = false;
+let CURRENT_LESSON_SEC = 0;
+let LAST_STUDY_ACT = Date.now();
+const STUDY_IDLE_MS = 180000;
+let _studyUnsavedTicks = 0;
+
+function touchStudyActivity() { LAST_STUDY_ACT = Date.now(); }
+function clearStudyFlags() {
+  STUDY_STEP_ACTIVE = false;
+  CRASH30_DAY_ACTIVE = false;
+  REVIEW_IN_PROGRESS = false;
+}
+function saveLocalOnly() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* bỏ qua */ }
+}
+function flushStudySec() {
+  if (_studyUnsavedTicks > 0) {
+    _studyUnsavedTicks = 0;
+    saveLocalOnly();
   }
-}, 60000);
+}
+function getTodayStudySec() {
+  const t = todayN();
+  return (S && S.studySec && S.studySec.d === t) ? (S.studySec.s || 0) : 0;
+}
+function formatStudyDuration(sec) {
+  const tot = Math.max(0, Math.round(sec || 0));
+  const m = Math.floor(tot / 60), s = tot % 60;
+  return m > 0 ? (s > 0 ? (m + 'p ' + s + 's') : (m + ' phút')) : (s + ' giây');
+}
+function isActivelyStudying() {
+  if (typeof document === 'undefined' || document.visibilityState !== 'visible') return false;
+  if (!S || !S.name || document.getElementById('onboarding-overlay')) return false;
+  if (Date.now() - LAST_STUDY_ACT > STUDY_IDLE_MS) return false;
+  if (document.getElementById('bughunter-overlay') || document.getElementById('builder-overlay') || document.getElementById('flashcard-overlay')) return true;
+  if (typeof VIEW === 'undefined') return false;
+  if (VIEW === 'lesson') return !!STUDY_STEP_ACTIVE;
+  if (VIEW === 'review') return !!REVIEW_IN_PROGRESS;
+  if (VIEW === 'crash30') return !!CRASH30_DAY_ACTIVE;
+  if (VIEW === 'dictation') return typeof DICT_ACTIVE_ID !== 'undefined' && !!DICT_ACTIVE_ID;
+  if (VIEW === 'skills' || VIEW === 'speak' || VIEW === 'write' || VIEW === 'games' || VIEW === 'news' || VIEW === 'knowledge' || VIEW === 'grammar' || VIEW === 'kanji' || VIEW === 'ielts' || VIEW === 'exam') return true;
+  return false;
+}
+function recordStudySecond() {
+  if (!isActivelyStudying()) return;
+  const t = todayN();
+  if (!S.studySec || S.studySec.d !== t) S.studySec = { d: t, s: 0 };
+  S.studySec.s = (S.studySec.s || 0) + 1;
+  if (typeof VIEW !== 'undefined' && VIEW === 'lesson' && STUDY_STEP_ACTIVE) CURRENT_LESSON_SEC++;
+  _studyUnsavedTicks++;
+  if (S.studySec.s >= 60) {
+    const mins = Math.floor(S.studySec.s / 60);
+    S.studySec.s = S.studySec.s % 60;
+    _studyUnsavedTicks = 0;
+    addXp(mins, S.lang || 'en');
+  } else if (_studyUnsavedTicks >= 10) {
+    _studyUnsavedTicks = 0;
+    saveLocalOnly();
+  }
+}
+if (typeof window !== 'undefined') {
+  setInterval(recordStudySecond, 1000);
+  if (typeof document !== 'undefined') {
+    ['pointerdown', 'keydown', 'input', 'change'].forEach((ev) => {
+      document.addEventListener(ev, touchStudyActivity, { passive: true, capture: true });
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) flushStudySec();
+      else touchStudyActivity();
+    });
+  }
+  window.addEventListener('pagehide', flushStudySec);
+}
 
 // ===== Ôn tập ngắt quãng FSRS (Free Spaced Repetition Scheduler: Stability st + Difficulty d + Box b 0–6) =====
 const IV = [1, 1, 3, 7, 14, 30, 60];
@@ -2382,6 +2459,7 @@ function say(code, text, slow, onDone) {
   if (!text) { if (onDone) onDone(false); return; }
   text = plain(text);
   if (!text) { if (onDone) onDone(false); return; }
+  touchStudyActivity();
   const mySeq = ++SAY_SEQ;
   if (TTS_TIMER) { clearTimeout(TTS_TIMER); TTS_TIMER = null; }
   try { AUD.pause(); } catch (e) {}
@@ -3041,7 +3119,7 @@ function getReviewedToday(code, d = todayN()) {
     const it = S.srs[k];
     if (it && it.last === d) srsTouched++;
   });
-  const xpItems = Math.floor(xpOf(d, code) / XP_ITEM);
+  const xpItems = XP_ITEM > 0 ? Math.floor(xpOf(d, code) / XP_ITEM) : 0;
   return Math.max(revSession, srsTouched, xpItems);
 }
 
@@ -3357,6 +3435,9 @@ function setTabs(show) {
 }
 function go(k) {
   stopSay();
+  clearStudyFlags();
+  flushStudySec();
+  touchStudyActivity();
   if (k === 'skills') {
     VIEW = 'skills';
   } else if (k === 'speak' || k === 'write' || k === 'listen' || k === 'read') {
@@ -5060,6 +5141,7 @@ function crash30HomeSection(d, onRefresh = () => crash30TabView(), opts = {}) {
 
 function crash30TabView() {
   stopSay();
+  CRASH30_DAY_ACTIVE = false;
   const d = DATA[S.lang] || DATA.en;
   if (!d || !d.crash30) return go('practice');
   const sec = crash30HomeSection(d, () => crash30TabView(), { alwaysOpen: true });
@@ -5076,6 +5158,8 @@ function crash30DayView(dayNum) {
   const d = DATA.en;
   const c30 = d && d.crash30;
   if (!c30) return go('home');
+  CRASH30_DAY_ACTIVE = true;
+  touchStudyActivity();
   const day = c30.days.find((x) => x.n === dayNum) || c30.days[0];
   const stObj = (c30.stages || []).find((s) => s.id === day.stage) || { name: '' };
   setTabs(false);
@@ -5087,6 +5171,8 @@ function crash30DayView(dayNum) {
   let activeTimer = null;
 
   const cleanup = () => {
+    CRASH30_DAY_ACTIVE = false;
+    flushStudySec();
     if (activeTimer) { clearInterval(activeTimer); activeTimer = null; }
     stopSay();
     try { stopActiveRecognition(); } catch (e) {}
@@ -7553,6 +7639,9 @@ function homeView(opts = {}) {
     requestAnimationFrame(() => openOnboardingModal(false));
   }
 
+  const todaySec = getTodayStudySec();
+  clearStudyFlags();
+
   const todayCard = h('div', { class: 'panel stack', style: { gap: '10px' } },
     h('div', { class: 'row between small', style: { alignItems: 'center', gap: '6px' } },
       h('span', {},
@@ -7563,12 +7652,12 @@ function homeView(opts = {}) {
           : h('span', { class: 'chip', style: { fontSize: '.72rem', marginRight: '6px' } }, '⚡ Duy trì'),
         h('span', { style: { fontWeight: 600 } }, xp >= g ? 'Đã đạt mục tiêu hôm nay' : 'Học hôm nay')
       ),
-      h('span', { class: 'muted', style: { fontWeight: 600 } }, xp + '/' + g + ' phút')
+      h('span', { class: 'muted', style: { fontWeight: 600 } }, xp > 0 ? (xp + '/' + g + ' phút') : (todaySec > 0 ? ('0/' + g + ' phút · ' + todaySec + 's') : ('0/' + g + ' phút')))
     ),
     h('div', { class: 'bar', role: 'progressbar', 'aria-label': 'Mục tiêu hôm nay', 'aria-valuenow': xp, 'aria-valuemax': g }, gf),
     h('div', { class: 'stats' },
       h('div', { class: 'stat' }, h('b', {}, st), h('span', {}, 'ngày liên tục')),
-      h('div', { class: 'stat' }, h('b', {}, xp + 'p'), h('span', {}, 'phút hôm nay')),
+      h('div', { class: 'stat' }, h('b', {}, xp > 0 ? (xp + 'p') : (todaySec > 0 ? (todaySec + 's') : '0p')), h('span', {}, xp === 0 && todaySec > 0 ? 'học hôm nay' : 'phút hôm nay')),
       h('div', { class: 'stat' }, h('b', {}, due), h('span', {}, 'từ cần ôn'))
     ),
     nx ? h('button', { class: 'primary block', onclick: () => lessonView(nx.t, nx.i) },
@@ -7858,7 +7947,7 @@ function homeView(opts = {}) {
     topicsNode,
     catExamCard,
     metaFooterCard,
-    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.20 · Bộ đề vượt cấp & xáo trộn')));
+    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.21 · Bộ đề vượt cấp & tính giờ thực học')));
   if (_keepY != null) window.scrollTo(0, _keepY);
 }
 
@@ -15502,6 +15591,9 @@ function startCategoryExam(code, catObj, topics, examOpts = null) {
 
 function lessonView(t, i, opts = null) {
   VIEW = 'lesson'; setTabs(false);
+  STUDY_STEP_ACTIVE = false;
+  CURRENT_LESSON_SEC = 0;
+  touchStudyActivity();
   const catExam = opts && opts.catExam;
   setFeedbackContext({ mode: 'lesson', topicId: t.id, topicTitle: t.sub || t.title, lessonIndex: i, lessonKind: t.lessons[i].kind, lessonTitle: lessonTitle(t, i) });
   const code = t.lang || S.lang || 'en', steps = catExam ? catExam.steps : buildSteps(t, i), first = new Map(), retried = new Set(), queue = steps.map((s, n) => Object.assign({}, s, { n }));
@@ -15512,9 +15604,11 @@ function lessonView(t, i, opts = null) {
   }
   else preloadTopicAudio(code, t);
   if (t.gram && t.gram.length && DATA[code] && DATA[code].grammar) preloadGrammarAudio(code, t.gram.map((gid) => DATA[code].grammar[gid]).filter(Boolean));
-  const exit = () => { stopSay(); setFeedbackContext(null); go('home'); };
+  const exit = () => { STUDY_STEP_ACTIVE = false; flushStudySec(); stopSay(); setFeedbackContext(null); go('home'); };
 
   function step() {
+    STUDY_STEP_ACTIVE = true;
+    touchStudyActivity();
     stopSay();
     const ex = queue.shift();
     if (!ex) return finish();
@@ -15706,7 +15800,7 @@ function lessonView(t, i, opts = null) {
         bestScore = Math.max(bestScore, score);
         if (score === bestScore) { bestAlign = a; lastSaid = said; }
         S.spoken[spokenKey] = Math.max(S.spoken[spokenKey] || 0, score);
-        addXp(score >= 70 ? XP_ITEM : 1, code);
+        if (XP_ITEM > 0) addXp(score >= 70 ? XP_ITEM : 1, code);
         checkAch();
         save();
 
@@ -16026,14 +16120,19 @@ function lessonView(t, i, opts = null) {
       const prevEx = S.catExams[sk] || {};
       S.catExams[sk] = { best: Math.max(pct, prevEx.best || 0), tries: (prevEx.tries || 0) + 1, last: todayN() };
     }
-    addXp(xp, code); checkAch();
+    STUDY_STEP_ACTIVE = false;
+    flushStudySec();
+    addXp(xp, code); checkAch(); save();
     const nx = nextLesson(DATA[code]);
     setFeedbackContext(null);
     VIEW = 'home';
+    const secToday = getTodayStudySec();
+    const minToday = xpOf(todayN(), code);
+    const todayTimeSummary = minToday > 0 ? (minToday + '/' + goal() + ' phút') : (secToday > 0 ? ('0/' + goal() + ' phút (' + secToday + 's)') : ('0/' + goal() + ' phút'));
     mount(h('div', { class: 'panel stack center', style: { marginTop: '24px' } },
       h('p', { class: 'label' }, t.sub || t.title),
       h('h1', {}, correct === total ? 'Không sai câu nào!' : 'Xong bài rồi!'),
-      h('p', {}, h('b', {}, correct + '/' + total + ' câu đúng (' + pct + '%)'), ' · +' + xp + ' XP' + (repeat && !catExam ? ' (học lại: nửa XP)' : '')),
+      h('p', {}, h('b', {}, correct + '/' + total + ' câu đúng (' + pct + '%)'), CURRENT_LESSON_SEC > 0 ? (' · ⏱ ' + formatStudyDuration(CURRENT_LESSON_SEC)) : (xp > 0 ? (' · +' + xp + ' phút') : '')),
       passedCatExam && h('div', {
         class: 'feedback ok',
         style: { width: '100%', textAlign: 'center', margin: '4px 0' }
@@ -16062,7 +16161,7 @@ function lessonView(t, i, opts = null) {
         h('strong', {}, '💡 Đạt ' + pct + '% — Cần từ 80% trở lên để hoàn thành 100% cả chủ đề'),
         h('p', { class: 'small muted', style: { margin: '4px 0 0 0' } }, 'Bạn có thể làm lại bài Ôn tập cả chủ đề này hoặc học từng bài nhỏ bên dưới.')
       ),
-      h('p', {}, 'Hôm nay ' + LANGS[code].short + ': ' + xpOf(todayN(), code) + '/' + goal() + ' XP · chuỗi ' + streak(code) + ' ngày'),
+      h('p', {}, 'Hôm nay ' + LANGS[code].short + ': ' + todayTimeSummary + ' · chuỗi ' + streak(code) + ' ngày'),
       catExam && (() => {
         const list = getCategoryExamCatalog(catExam.catObj, catExam.topics);
         const curIdx = catExam.variantMeta && catExam.variantMeta.variantIdx >= 0 ? catExam.variantMeta.variantIdx : 0;
@@ -16175,7 +16274,7 @@ function lessonView(t, i, opts = null) {
       }, '🗑️ Xóa tiến độ bài này')
     ),
     t.lessons[i].words.length > 0 && h('div', { class: 'panel stack' }, h('h3', {}, 'Từ mới trong bài'),
-      ...t.lessons[i].words.map((v) => h('button', { class: 'lesson', onclick: () => say(code, v.w) },
+      ...t.lessons[i].words.map((v) => h('button', { class: 'lesson', onclick: () => { STUDY_STEP_ACTIVE = true; touchStudyActivity(); say(code, v.w); } },
         h('span', { class: 'meta' }, h('b', { lang: LANGS[code].lang }, plain(v.w)), v.r && v.r !== v.w ? h('span', { class: 'small' + (code === 'en' ? ' ipa' : ' muted'), style: code === 'en' ? { color: 'var(--teal)', fontWeight: 600, display: 'inline-block', marginLeft: '6px' } : null }, v.r) : '', h('span', { class: 'small muted', style: { display: 'block' } }, v.m)),
         h('span', { class: 'spk', 'aria-hidden': 'true' }, icon(ICON.speaker))))),
     h('div', { class: 'dock stack', style: { gap: '8px' } },
@@ -16217,6 +16316,8 @@ function startTopicFlashcard(t, customWords, fromView, lessonIdx) {
   const code = (t && t.lang) || S.lang || 'en';
   const t0 = todayN();
   VIEW = 'review';
+  REVIEW_IN_PROGRESS = true;
+  touchStudyActivity();
   setTabs(false);
   const words = (customWords && customWords.length) ? customWords : (t.vocab || []);
   const kanjis = (!customWords && t.kanji) ? t.kanji : [];
@@ -16229,6 +16330,7 @@ function startTopicFlashcard(t, customWords, fromView, lessonIdx) {
   });
 
   if (!queue.length) {
+    REVIEW_IN_PROGRESS = false;
     setTabs(true);
     go('home');
     return;
@@ -16241,6 +16343,8 @@ function startTopicFlashcard(t, customWords, fromView, lessonIdx) {
   let goodCount = 0;
 
   const exit = () => {
+    REVIEW_IN_PROGRESS = false;
+    flushStudySec();
     stopSay();
     setTabs(true);
     if (fromView === 'lesson' && typeof lessonIdx === 'number') lessonView(t, lessonIdx);
@@ -16253,6 +16357,8 @@ function startTopicFlashcard(t, customWords, fromView, lessonIdx) {
     window.scrollTo(0, 0);
     const item = queue[0];
     if (!item) {
+      REVIEW_IN_PROGRESS = false;
+      flushStudySec();
       if (fromView === 'lesson' && typeof lessonIdx === 'number' && totalCards > 0) {
         const lk = lkey(t, lessonIdx);
         const pct = Math.round((goodCount / totalCards) * 100);
@@ -16468,6 +16574,8 @@ function reviewView(forceExtra = false) {
 
   // Nếu đã đạt định mức ngày mà chưa bấm forceExtra, hiển thị màn hình hoàn thành định mức
   if (totalVaultDue === 0 || (remDailyQuota === 0 && !forceExtra)) {
+    REVIEW_IN_PROGRESS = false;
+    flushStudySec();
     mount(h('div', { class: 'stack-lg', style: { gap: '12px' } }, head(),
       h('div', { class: 'panel stack center', style: { padding: '24px', borderRadius: '16px', gap: '10px' } },
         h('h2', {}, totalVaultDue === 0 ? '🎉 Đã ôn sạch kho từ đến hạn!' : '🎉 Đã hoàn thành định mức ôn hôm nay!'),
@@ -16511,6 +16619,8 @@ function reviewView(forceExtra = false) {
     window.scrollTo(0, 0);
     const item = queue[0];
     if (!item) {
+      REVIEW_IN_PROGRESS = false;
+      flushStudySec();
       checkAch();
       const afterDone = getReviewedToday(code, t0);
       const afterVault = srsDueItems(code, 'vocab').length;
@@ -16539,6 +16649,8 @@ function reviewView(forceExtra = false) {
       return;
     }
 
+    REVIEW_IN_PROGRESS = true;
+    touchStudyActivity();
     const k = item.key, s = S.srs[k];
     const skillBadge = {
       vocab: h('span', { class: 'chip' }, item.it && item.it.k ? 'Kanji' : 'Từ vựng'),
@@ -17004,7 +17116,7 @@ function speakOne(t, it, all) {
   const record = (score) => {
     S.spoken[k] = Math.max(S.spoken[k] || 0, score);
     srsRate(code + ':speak:' + plain(it.text), score >= 70);
-    addXp(score >= 70 ? XP_ITEM : 1, code);
+    if (XP_ITEM > 0) addXp(score >= 70 ? XP_ITEM : 1, code);
     checkAch();
   };
 
