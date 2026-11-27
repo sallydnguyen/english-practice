@@ -166,6 +166,67 @@ select { width: 100%; }
 .lesson.done .dot { background: var(--good-bg); color: var(--good); }
 .lesson.next { border: 2px solid var(--teal); }
 .lesson .meta { flex: 1; min-width: 0; }
+.duo-unit { border: 1px solid var(--line); border-radius: 20px; background: var(--surface); overflow: hidden; }
+summary.duo-unit-hdr {
+  width: 100%; border: none; border-radius: 0; padding: 14px 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  text-align: left; color: #fff; cursor: pointer; list-style: none; user-select: none;
+}
+summary.duo-unit-hdr::-webkit-details-marker { display: none; }
+details.duo-unit[open] > summary .acc-arrow { transform: rotate(180deg); }
+.duo-unit-hdr .duo-u-meta { flex: 1; min-width: 0; }
+.duo-unit-hdr .duo-u-kicker { font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; opacity: .88; display: block; }
+.duo-unit-hdr .duo-u-title { font-size: 1.02rem; font-weight: 800; display: block; line-height: 1.25; }
+.duo-unit-hdr .duo-u-sub { font-size: .8rem; opacity: .9; display: block; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.duo-unit-prog { height: 6px; border-radius: 99px; background: rgba(255,255,255,.26); margin-top: 7px; overflow: hidden; }
+.duo-unit-prog > i { display: block; height: 100%; background: #fff; border-radius: 99px; transition: width .3s ease; }
+.duo-path {
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+  padding: 22px 12px 18px; position: relative;
+  background: radial-gradient(circle at 50% 0%, rgba(15,82,87,.04), transparent 70%);
+}
+.duo-step { display: flex; flex-direction: column; align-items: center; width: 100%; position: relative; }
+.duo-node-anchor { display: flex; flex-direction: column; align-items: center; transform: translateX(var(--duo-x, 0px)); transition: transform .2s ease; position: relative; }
+.duo-float-tip {
+  position: relative; margin-bottom: 8px; padding: 5px 12px; border-radius: 12px;
+  background: var(--surface); border: 2px solid #58cc02; color: #46a302;
+  font-size: .74rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+  box-shadow: 0 3px 10px rgba(88,204,2,.2); animation: duoBounce 1.8s ease-in-out infinite;
+  white-space: nowrap;
+}
+:root[data-theme="dark"] .duo-float-tip { color: #7ce82a; }
+.duo-float-tip::after {
+  content: ''; position: absolute; left: 50%; bottom: -7px; transform: translateX(-50%) rotate(45deg);
+  width: 10px; height: 10px; background: var(--surface); border-right: 2px solid #58cc02; border-bottom: 2px solid #58cc02;
+}
+@keyframes duoBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+.duo-ring {
+  width: 82px; height: 82px; border-radius: 50%; padding: 5px;
+  display: grid; place-items: center; position: relative;
+  background: conic-gradient(var(--ring-col, var(--teal)) calc(var(--pct, 0) * 1%), var(--line) 0);
+}
+.duo-btn {
+  width: 100%; height: 100%; min-height: 0; padding: 0; border-radius: 50%; border: none;
+  display: grid; place-items: center; font-size: 1.35rem; font-weight: 800;
+  background: var(--surface); color: var(--muted); box-shadow: 0 5px 0 var(--line);
+  transition: transform .1s ease, box-shadow .1s ease; cursor: pointer;
+}
+.duo-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--line); }
+.duo-btn.cur { background: #58cc02; color: #fff; box-shadow: 0 5px 0 #46a302; }
+.duo-btn.cur:active { box-shadow: 0 2px 0 #46a302; }
+.duo-btn.done { background: #f59e0b; color: #fff; box-shadow: 0 5px 0 #b45309; }
+.duo-btn.done:active { box-shadow: 0 2px 0 #b45309; }
+.duo-btn.prog { background: var(--teal); color: var(--teal-ink); box-shadow: 0 5px 0 rgba(10,55,58,.85); }
+.duo-btn.prog:active { box-shadow: 0 2px 0 rgba(10,55,58,.85); }
+.duo-btn.idle { background: var(--surface); color: var(--ink); border: 2px solid var(--line); box-shadow: 0 5px 0 var(--line); }
+.duo-label { margin-top: 8px; max-width: 175px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.duo-label b { font-size: .84rem; line-height: 1.25; color: var(--ink); }
+.duo-label span { font-size: .74rem; color: var(--muted); line-height: 1.25; }
+.duo-popover {
+  width: 100%; max-width: 440px; margin-top: 12px; padding: 14px; border-radius: 16px;
+  background: var(--sunk); border: 2px solid var(--teal); box-shadow: 0 10px 24px rgba(0,0,0,.1);
+  display: flex; flex-direction: column; gap: 8px; animation: fadeInDown .16s ease;
+}
 .extras { display: flex; gap: 8px; flex-wrap: wrap; }
 .chip { display: inline-block; font-size: .75rem; padding: 2px 8px; border-radius: 99px; background: var(--sunk); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .chip.good { background: var(--good-bg); color: var(--good); }
@@ -1293,7 +1354,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/en.json và data/ielts_30day_listening.js,
    âm thanh thu sẵn nằm trong audio/ (audio/w*.json, audio/mail/, audio/listen/, audio/ielts/).
    ===================================================================== */
-const APP_BUILD_ID = '20261126-0500';
+const APP_BUILD_ID = '20261126-0530';
 const LANGS = {
   en: { label: 'English', vi: 'Tiếng Anh', short: 'Anh', folder: '', tts: 'en-US', rec: 'en-US', lang: 'en', cjk: false },
 };
@@ -7452,9 +7513,6 @@ function homeView() {
     ? d.topics.filter((t) => (t.category || defCategory) === curCat)
     : d.topics;
 
-  const filteredHasOpen = [...openTopics].some((k) => filteredTopics.some((t) => k === S.lang + ':' + t.id));
-  if (!filteredHasOpen && nx) openTopics.add(S.lang + ':' + nx.t.id);
-
   const phases = []; let cur = null;
   for (const t of filteredTopics) {
     if (!cur || cur.name !== t.phase) { cur = { name: t.phase, topics: [] }; phases.push(cur); }
@@ -7496,8 +7554,6 @@ function homeView() {
             else if (S.lang === 'ja') S.jaCat = c.id;
             subjectsOpen = false;
             save();
-            const nextNx = nextLesson(d, c.id);
-            if (nextNx) openTopics.add(S.lang + ':' + nextNx.t.id);
             homeView();
           }
         },
@@ -7599,43 +7655,64 @@ function homeView() {
   })();
 
   const topicsNode = (() => {
-    if (phases.length <= 1) {
-      return h('div', { class: 'stack' },
-        ...phases.map((ph) => h('div', { class: 'stack' },
-          ph.name && h('p', { class: 'label phase' }, cleanPhaseName(ph.name)),
-          ...ph.topics.map((t) => topicCard(t, nx, curCat === 'all' ? t.pos : (t.catPos || (filteredTopics.indexOf(t) + 1)))))));
-    }
-    const wrap = h('div', { class: 'stack', style: { gap: '10px' } });
-    wrap.append(h('div', { class: 'acc-toolbar' },
-      h('span', { class: 'small muted', style: { fontWeight: 600 } }, '📚 ' + phases.length + ' nhóm chuyên đề · ' + filteredTopics.length + ' bài'),
-      makeToggleAllBtn(() => wrap, 'details.phase-acc')
-    ));
-    phases.forEach((ph, phIdx) => {
-      const pTitle = ph.name ? cleanPhaseName(ph.name) : ('Nhóm ' + (phIdx + 1));
+    const unitPalettes = [
+      'linear-gradient(135deg, #0f5257, #147a74)',
+      'linear-gradient(135deg, #2b8a3e, #40c057)',
+      'linear-gradient(135deg, #4338ca, #6366f1)',
+      'linear-gradient(135deg, #b45309, #f59e0b)',
+      'linear-gradient(135deg, #6d28d9, #8b5cf6)'
+    ];
+    const renderUnit = (ph, phIdx) => {
+      const pTitle = ph.name ? cleanPhaseName(ph.name) : ('Chặng ' + (phIdx + 1));
       const pKey = S.lang + ':' + curCat + ':' + pTitle;
       const doneTopics = ph.topics.filter((t) => t.lessons.every((_, i) => lessonDone(t, i))).length;
+      const pctUnit = ph.topics.length ? Math.round((doneTopics / ph.topics.length) * 100) : 0;
       const hasNx = !!(nx && ph.topics.includes(nx.t));
       const isComplete = doneTopics === ph.topics.length && ph.topics.length > 0;
-      const defOpen = hasNx || (!nx && phIdx === 0);
+      const defOpen = hasNx || (!nx && phIdx === 0) || phases.length <= 1;
       const isOpen = openPhases.has(pKey) || (defOpen && !closedPhases.has(pKey));
       const subText = isComplete
-        ? '✓ Đã hoàn thành tất cả bài trong nhóm'
-        : (hasNx ? ('▶ Đang học: ' + (nx.t.sub || nx.t.title)) : ((ph.topics[0] && (ph.topics[0].sub || ph.topics[0].title)) + (ph.topics.length > 1 ? ' …' : '')));
-      wrap.append(accordionItem({
-        cls: 'acc-group phase-acc',
-        border: hasNx ? '1.5px solid var(--teal)' : null,
-        defaultOpen: isOpen,
-        onToggle: (on) => {
-          if (on) { openPhases.add(pKey); closedPhases.delete(pKey); }
+        ? '✓ Đã hoàn thành tất cả chủ đề trong chặng'
+        : (hasNx ? ('Đang học: ' + (nx.t.sub || nx.t.title)) : ((ph.topics[0] && (ph.topics[0].sub || ph.topics[0].title)) + (ph.topics.length > 1 ? ' …' : '')));
+
+      const attrs = {
+        class: 'duo-unit phase-acc',
+        style: hasNx ? { border: '2px solid #58cc02' } : undefined,
+        ontoggle: (e) => {
+          if (e.target !== e.currentTarget) return;
+          if (e.currentTarget.open) { openPhases.add(pKey); closedPhases.delete(pKey); }
           else { openPhases.delete(pKey); closedPhases.add(pKey); }
+        }
+      };
+      if (isOpen) attrs.open = 'open';
+
+      return h('details', attrs,
+        h('summary', {
+          class: 'duo-unit-hdr',
+          style: { background: isComplete ? 'linear-gradient(135deg, #d97706, #f59e0b)' : unitPalettes[phIdx % unitPalettes.length] }
         },
-        iconEl: hasNx ? '🎯' : (isComplete ? '✅' : '📂'),
-        title: pTitle,
-        subtitle: subText,
-        chips: [h('span', { class: 'chip' + (isComplete ? ' good' : ''), style: { fontSize: '.74rem', fontWeight: 700 } }, doneTopics + '/' + ph.topics.length + ' bài')],
-        body: ph.topics.map((t) => topicCard(t, nx, curCat === 'all' ? t.pos : (t.catPos || (filteredTopics.indexOf(t) + 1))))
-      }));
-    });
+          h('div', { class: 'duo-u-meta' },
+            h('span', { class: 'duo-u-kicker' },
+              (isComplete ? '👑 ĐÃ XONG ' : (hasNx ? '🎯 ĐANG HỌC · ' : '')) + `CHẶNG ${phIdx + 1} · ${doneTopics}/${ph.topics.length} BÀI`
+            ),
+            h('span', { class: 'duo-u-title' }, pTitle),
+            h('span', { class: 'duo-u-sub' }, subText),
+            h('div', { class: 'duo-unit-prog' }, h('i', { style: { width: pctUnit + '%' } }))
+          ),
+          h('span', { class: 'acc-arrow', style: { color: '#fff', fontSize: '1rem', flexShrink: 0 }, 'aria-hidden': 'true' }, '▾')
+        ),
+        h('div', { class: 'duo-path' },
+          ph.topics.map((t, ti) => topicCard(t, nx, curCat === 'all' ? t.pos : (t.catPos || (filteredTopics.indexOf(t) + 1)), ti))
+        )
+      );
+    };
+
+    const wrap = h('div', { class: 'stack', style: { gap: '12px' } });
+    wrap.append(h('div', { class: 'acc-toolbar' },
+      h('span', { class: 'small muted', style: { fontWeight: 600 } }, '🗺️ Con đường học tập · ' + phases.length + ' chặng · ' + filteredTopics.length + ' chủ đề'),
+      phases.length > 1 ? makeToggleAllBtn(() => wrap, 'details.phase-acc') : null
+    ));
+    phases.forEach((ph, phIdx) => wrap.append(renderUnit(ph, phIdx)));
     return wrap;
   })();
 
@@ -13413,17 +13490,40 @@ function renderInlineTopicQuiz(t) {
   return box;
 }
 
-function topicCard(t, nx, num) {
+function topicCard(t, nx, num, idxInPhase = 0) {
   const ok = t.lang + ':' + t.id, done = t.lessons.filter((l, i) => lessonDone(t, i)).length, open = openTopics.has(ok), isCur = nx && nx.t === t;
   const d = DATA[t.lang];
   const hasGram = !!(t.gram && t.gram.length && d && d.grammar);
   const hasQuickQuiz = !!((t.vocab && t.vocab.length) || (t.kanji && t.kanji.length) || (t.quiz && t.quiz.length) || hasGram);
   const quickOpen = openQuickQuizTopics.has(ok);
-  const body = open && h('div', { class: 'body' },
+  const totalL = t.lessons.length || 1;
+  const pct = Math.round((done / totalL) * 100);
+  const isDone = done === totalL;
+  const displayNum = num != null ? num : (t.catPos || t.pos);
+  const lvl = t.level || (t.category === 'life' ? 'A1' : t.category === 'hobbies' ? 'A2' : (t.category === 'business' ? 'B1' : null));
+  const offsets = [0, 38, 56, 38, 0, -38, -56, -38];
+  const shiftX = offsets[idxInPhase % offsets.length];
+
+  const btnCls = isDone ? 'done' : (isCur ? 'cur' : (done > 0 ? 'prog' : 'idle'));
+  const ringCol = isDone ? '#f59e0b' : (isCur ? '#58cc02' : 'var(--teal)');
+  const nodeGlyph = isDone ? '👑' : (isCur ? '★' : String(displayNum));
+
+  const popover = open ? h('div', { class: 'duo-popover' },
+    h('div', { class: 'row between', style: { alignItems: 'flex-start', gap: '8px' } },
+      h('div', { class: 'stack', style: { gap: '2px', minWidth: 0, flex: 1 } },
+        h('b', { lang: L().lang, style: { fontSize: '.98rem' } }, `${displayNum}. ${t.title}`),
+        t.sub && t.sub !== t.title ? h('span', { class: 'small muted' }, t.sub) : null
+      ),
+      h('div', { class: 'row', style: { gap: '6px', alignItems: 'center', flexShrink: 0 } },
+        lvl ? h('span', { class: 'chip level ' + lvl.toLowerCase().replace('+', '').replace(/\s+/g, '') }, lvl) : null,
+        h('span', { class: 'chip' + (isDone ? ' good' : '') }, done + '/' + totalL),
+        h('button', { class: 'ghost mini', style: { minHeight: '28px', padding: '2px 8px' }, onclick: () => { openTopics.delete(ok); homeView(); } }, '✕')
+      )
+    ),
     (hasGram || hasQuickQuiz) && h('div', { class: 'extras', style: { gap: '6px', marginBottom: '2px' } },
       hasGram && h('button', {
         class: 'ghost mini',
-        style: { border: '1px solid var(--line)', background: 'var(--sunk)', fontSize: '.82rem', padding: '5px 10px' },
+        style: { border: '1px solid var(--line)', background: 'var(--surface)', fontSize: '.82rem', padding: '5px 10px' },
         onclick: () => grammarView(t, 'home')
       }, '📖 Ngữ pháp (' + t.gram.length + ')'),
       hasQuickQuiz && h('button', {
@@ -13446,11 +13546,10 @@ function topicCard(t, nx, num) {
     ),
     quickOpen && renderInlineTopicQuiz(t),
     ...t.lessons.map((l, i) => {
-      const dn = lessonDone(t, i), unlocked = dn || i === 0 || lessonDone(t, i - 1) || true;
+      const dn = lessonDone(t, i);
       const lessonBtn = h('button', {
         class: 'lesson' + (dn ? ' done' : '') + (isCur && nx.i === i ? ' next' : ''),
         style: dn ? { flex: '1', minWidth: 0 } : null,
-        disabled: !unlocked,
         onclick: () => lessonView(t, i)
       },
         h('span', { class: 'dot', 'aria-hidden': 'true' }, dn ? '✓' : i + 1),
@@ -13467,20 +13566,10 @@ function topicCard(t, nx, num) {
         title: 'Xóa tiến độ bài này để học lại từ đầu',
         'aria-label': 'Xóa tiến độ bài ' + lessonTitle(t, i),
         style: {
-          flex: 'none',
-          padding: '0 10px',
-          height: '52px',
-          borderRadius: '12px',
-          color: 'var(--muted)',
-          fontSize: '.74rem',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '2px',
-          lineHeight: 1.1,
-          border: '1px solid var(--line)',
-          background: 'var(--surface)'
+          flex: 'none', padding: '0 10px', height: '52px', borderRadius: '12px',
+          color: 'var(--muted)', fontSize: '.74rem', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: '2px', lineHeight: 1.1,
+          border: '1px solid var(--line)', background: 'var(--surface)'
         },
         onclick: (e) => {
           e.stopPropagation();
@@ -13509,16 +13598,38 @@ function topicCard(t, nx, num) {
           }
         }
       }, '↺ Xóa tiến độ chủ đề (' + done + ')')
-    ) : null);
-  const displayNum = num != null ? num : (t.catPos || t.pos);
-  const lvl = t.level || (t.category === 'life' ? 'A1' : t.category === 'hobbies' ? 'A2' : (t.category === 'business' ? 'B1' : null));
-  return h('section', { class: 'topic' + (isCur ? ' cur' : '') + (done === t.lessons.length ? ' done' : '') },
-    h('button', { class: 'head', 'aria-expanded': String(open), onclick: () => { open ? openTopics.delete(ok) : openTopics.add(ok); homeView(); } },
-      h('span', { class: 'num' }, done === t.lessons.length ? '✓' : displayNum),
-      h('span', { class: 'meta' }, h('b', { lang: L().lang }, t.title), t.sub && t.sub !== t.title && h('span', { class: 'small muted' }, t.sub)),
-      lvl && h('span', { class: 'chip level ' + lvl.toLowerCase().replace('+', '').replace(/\s+/g, '') }, lvl),
-      h('span', { class: 'chip' + (done === t.lessons.length ? ' good' : '') }, done + '/' + t.lessons.length)),
-    body);
+    ) : null
+  ) : null;
+
+  return h('section', { class: 'duo-step' },
+    h('div', { class: 'duo-node-anchor', style: { '--duo-x': shiftX + 'px' } },
+      isCur ? h('div', { class: 'duo-float-tip' }, done > 0 ? 'HỌC TIẾP' : 'BẮT ĐẦU') : null,
+      h('div', {
+        class: 'duo-ring',
+        style: { '--pct': pct, '--ring-col': ringCol }
+      },
+        h('button', {
+          type: 'button',
+          class: 'duo-btn ' + btnCls,
+          'aria-expanded': String(open),
+          'aria-label': (t.sub || t.title) + ' (' + done + '/' + totalL + ')',
+          onclick: () => {
+            if (open) openTopics.delete(ok);
+            else {
+              openTopics.clear();
+              openTopics.add(ok);
+            }
+            homeView();
+          }
+        }, nodeGlyph)
+      ),
+      h('div', { class: 'duo-label' },
+        h('b', {}, t.sub && t.sub !== t.title ? t.sub : t.title),
+        h('span', {}, (isDone ? '✓ Hoàn thành ' : '') + `${done}/${totalL} bài`)
+      )
+    ),
+    popover
+  );
 }
 
 // ===== Thẻ từ và câu cho bài học =====
