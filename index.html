@@ -1358,7 +1358,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/en.json và data/ielts_30day_listening.js,
    âm thanh thu sẵn nằm trong audio/ (audio/w*.json, audio/mail/, audio/listen/, audio/ielts/).
    ===================================================================== */
-const APP_BUILD_ID = '20261126-1030';
+const APP_BUILD_ID = '20261126-1045';
 const LANGS = {
   en: { label: 'English', vi: 'Tiếng Anh', short: 'Anh', folder: '', tts: 'en-US', rec: 'en-US', lang: 'en', cjk: false },
 };
@@ -4420,7 +4420,7 @@ function renderCrash30Roadmap() {
   });
   return accordionItem({
     id: 'c30_road_card',
-    cls: 'acc-card', iconEl: '💬', title: 'Chặng · 30 ngày Giao tiếp cấp tốc (B1)',
+    cls: 'acc-card', iconEl: '💬', title: 'Chặng · Giao tiếp cấp tốc',
     subtitle: doneN + '/' + total + ' ngày · hội thoại, mẫu câu, đóng vai, phản xạ nhanh',
     chips: [h('span', { class: 'chip' + (doneN === total ? ' good' : '') }, doneN + '/' + total)],
     body: [
@@ -4997,8 +4997,8 @@ function crash30HomeSection(d, onRefresh = () => crash30TabView(), opts = {}) {
       h('div', { class: 'stack', style: { gap: '3px', flex: '1 1 200px', minWidth: 0 } },
         h('div', { class: 'row', style: { gap: '6px', alignItems: 'center', flexWrap: 'wrap' } },
           h('span', { style: { fontSize: '1.15rem' } }, '⚡'),
-          h('b', { style: { fontSize: '1rem', color: 'var(--teal)' } }, c30.title),
-          h('span', { class: 'chip accent small' }, c30.level + ' · Phản xạ nhanh')
+          h('b', { style: { fontSize: '1rem', color: 'var(--teal)' } }, 'Giao tiếp cấp tốc'),
+          h('span', { class: 'chip accent small' }, 'Phản xạ nhanh')
         ),
         h('p', { class: 'small muted', style: { margin: 0 } }, '4 chặng · Hội thoại, mẫu câu, đóng vai & phản xạ tức thì (' + doneN + '/' + totalN + ' ngày · ' + pct + '%)')
       ),
@@ -5416,8 +5416,8 @@ function crash30DayView(dayNum) {
           type: 'button',
           class: 'ghost mini',
           onclick: () => { cleanup(); setTabs(true); go('crash30'); }
-        }, '← 30 ngày'),
-        h('span', { class: 'chip accent' }, 'Ngày ' + day.n + '/' + totalN + ' · B1'),
+        }, '← Giao tiếp cấp tốc'),
+        h('span', { class: 'chip accent' }, 'Ngày ' + day.n + '/' + totalN),
         h('div', { class: 'row', style: { gap: '4px' } },
           day.n > 1 ? h('button', { type: 'button', class: 'ghost mini', onclick: () => { cleanup(); CRASH30_TAB = 'dialogue'; crash30DayView(day.n - 1); } }, '‹ Trước') : null,
           day.n < totalN ? h('button', { type: 'button', class: 'ghost mini', onclick: () => { cleanup(); CRASH30_TAB = 'dialogue'; crash30DayView(day.n + 1); } }, 'Sau ›') : null
@@ -6588,7 +6588,7 @@ function buildDictationCatalog() {
       groups.push({
         id: 'c30',
         iconEl: '⚡',
-        title: '30 ngày Giao tiếp thực tế (B1)',
+        title: 'Giao tiếp cấp tốc',
         subtitle: '30 đoạn hội thoại đời sống & công sở ngắn gọn, tốc độ tự nhiên',
         lessons
       });
@@ -6596,11 +6596,11 @@ function buildDictationCatalog() {
   }
 
   const catMeta = [
-    { id: 'a1', iconEl: '🌱', lv: 'A1', title: 'A1 · Giao tiếp nền tảng', subtitle: 'Chào hỏi, giới thiệu, sinh hoạt hàng ngày với câu ngắn rõ ràng' },
-    { id: 'a2', iconEl: '🌿', lv: 'A2', title: 'A2 · Đời sống & Du lịch', subtitle: 'Mua sắm, đi lại, nhà hàng, hỏi đường và sở thích cá nhân' },
-    { id: 'b1', iconEl: '📘', lv: 'B1', title: 'B1 · Công việc & Tình huống', subtitle: 'Hội thoại nhóm, trao đổi công việc, giải quyết tình huống thực tế' },
-    { id: 'b2', iconEl: '💼', lv: 'B2', title: 'B2 · Kinh doanh & Phỏng vấn', subtitle: 'Thuyết trình, đàm phán, phỏng vấn STAR và trao đổi chuyên nghiệp' },
-    { id: 'c12', iconEl: '🎓', lv: 'C1', title: 'C1–C2 · Học thuật & Chuyên sâu', subtitle: 'Chính sách kinh tế, quản trị chiến lược, pháp lý và công nghệ cao' }
+    { id: 'a1', iconEl: '🌱', lv: 'A1', title: 'Giao tiếp nền tảng', subtitle: 'Chào hỏi, giới thiệu, sinh hoạt hàng ngày với câu ngắn rõ ràng' },
+    { id: 'a2', iconEl: '🌿', lv: 'A2', title: 'Đời sống & Du lịch', subtitle: 'Mua sắm, đi lại, nhà hàng, hỏi đường và sở thích cá nhân' },
+    { id: 'b1', iconEl: '📘', lv: 'B1', title: 'Công việc & Tình huống', subtitle: 'Hội thoại nhóm, trao đổi công việc, giải quyết tình huống thực tế' },
+    { id: 'b2', iconEl: '💼', lv: 'B2', title: 'Kinh doanh & Phỏng vấn', subtitle: 'Thuyết trình, đàm phán, phỏng vấn STAR và trao đổi chuyên nghiệp' },
+    { id: 'c12', iconEl: '🎓', lv: 'C1', title: 'Học thuật & Chuyên sâu', subtitle: 'Chính sách kinh tế, quản trị chiến lược, pháp lý và công nghệ cao' }
   ];
 
   catMeta.forEach((cm) => {
@@ -7023,7 +7023,7 @@ function dictationTabView() {
           class: 'ghost mini',
           onclick: () => { stopSeqPlay(); DICT_ACTIVE_ID = ''; dictationTabView(); }
         }, '← Danh mục bài nghe'),
-        h('span', { class: 'chip level ' + lesson.lv.toLowerCase() }, lesson.lv + ' · ' + lesson.lines.length + ' câu')
+        h('span', { class: 'chip' }, lesson.lines.length + ' câu')
       ),
       h('div', { class: 'stack', style: { gap: '2px' } },
         h('h2', { style: { margin: 0 } }, lesson.title),
@@ -7039,12 +7039,12 @@ function dictationTabView() {
   const errEntries = Object.values(S.dictationErrors || {}).sort((a, b) => (b.ts || 0) - (a.ts || 0));
   const filters = [
     ['all', 'Tất cả (' + allLessons.length + ')'],
-    ['c30', '30 ngày B1'],
-    ['a1', 'A1'],
-    ['a2', 'A2'],
-    ['b1', 'B1'],
-    ['b2', 'B2'],
-    ['c12', 'C1–C2']
+    ['c30', 'Giao tiếp cấp tốc'],
+    ['a1', 'Nền tảng'],
+    ['a2', 'Đời sống'],
+    ['b1', 'Công việc'],
+    ['b2', 'Kinh doanh'],
+    ['c12', 'Chuyên sâu']
   ];
   const qNorm = DICT_SEARCH_Q.trim().toLowerCase();
   const visibleGroups = groups.filter((g) => DICT_FILTER_LV === 'all' || g.id === DICT_FILTER_LV).map((g) => {
@@ -7133,7 +7133,7 @@ function dictationTabView() {
     ),
     h('div', { class: 'acc-toolbar' },
       h('span', { class: 'small muted', style: { fontWeight: 600 } },
-        `📚 ${visibleGroups.length} cấp độ · ${visibleGroups.reduce((s, g) => s + g.lessons.length, 0)} bài nghe chuẩn Studio`
+        `📚 ${visibleGroups.length} chuyên đề · ${visibleGroups.reduce((s, g) => s + g.lessons.length, 0)} bài nghe chuẩn Studio`
       ),
       makeToggleAllBtn(() => wrap, 'details.dict-acc')
     ),
@@ -7194,12 +7194,12 @@ function practiceTabView() {
     {
       iconEl: '🎧',
       title: 'Nghe, Nói & Giao tiếp phản xạ',
-      subtitle: 'Giao tiếp cấp tốc 30 ngày, 117+ bài nghe chép chính tả & nói đuổi Shadowing',
+      subtitle: 'Giao tiếp cấp tốc, 117+ bài nghe chép chính tả & nói đuổi Shadowing',
       chip: c30 ? '3 chuyên đề' : '117+ bài',
       defaultOpen: true,
       items: [
-        c30 ? { icon: '⚡', title: 'Giao tiếp cấp tốc 30 ngày (B1)', desc: `4 chặng · Hội thoại, mẫu câu, đóng vai AI & phản xạ nhanh (Tiếp theo: Ngày ${c30Next}).`, badge: `${c30Done}/${c30Tot} ngày`, fn: () => go('crash30') } : null,
-        { icon: '🎧', title: 'Dictation & Shadowing Studio (A1–C2)', desc: 'Nghe giọng chuẩn, chép chính tả, phân loại lỗi nghe & luyện Shadowing.', badge: '117+ bài', fn: () => go('dictation') },
+        c30 ? { icon: '⚡', title: 'Giao tiếp cấp tốc', desc: `4 chặng · Hội thoại, mẫu câu, đóng vai AI & phản xạ nhanh (Tiếp theo: Ngày ${c30Next}).`, badge: `${c30Done}/${c30Tot} ngày`, fn: () => go('crash30') } : null,
+        { icon: '🎧', title: 'Dictation & Shadowing Studio', desc: 'Nghe giọng chuẩn, chép chính tả, phân loại lỗi nghe & luyện Shadowing.', badge: '117+ bài', fn: () => go('dictation') },
         { icon: '🗣️', title: 'Shadowing · Hội thoại theo chủ đề', desc: 'Luyện nói đuổi các mẫu hội thoại trong từng chủ đề đã học.', badge: 'Nói', fn: () => { SKILL_TAB = 'speak'; go('skills'); } }
       ]
     },
@@ -7827,7 +7827,7 @@ function homeView(opts = {}) {
     topicsNode,
     catExamCard,
     metaFooterCard,
-    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.16 · Section (Cấp độ) & Unit')));
+    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.17 · Section (Cấp độ) & Unit')));
   if (_keepY != null) window.scrollTo(0, _keepY);
 }
 
@@ -14003,7 +14003,7 @@ function buildListenDialoguePanel(code, track, opts = {}) {
       }
       ACTIVE_DLG_AUDIO = audioPlayer;
       playBtn.textContent = '⏸ Tạm dừng';
-      statusText.textContent = 'Đang phát hội thoại ' + (track.level || 'B1+') + '…';
+      statusText.textContent = 'Đang phát hội thoại…';
     });
     audioPlayer.addEventListener('pause', () => {
       playBtn.textContent = audioFailed ? '▶ Nghe bằng giọng dự phòng' : '▶ Nghe đoạn hội thoại';
@@ -14070,7 +14070,7 @@ function buildListenDialoguePanel(code, track, opts = {}) {
   return h('div', { class: 'panel stack listen-dlg-panel', style: { gap: '8px', padding: opts.compact ? '12px' : '14px', borderRadius: '12px', background: 'var(--surface)' } },
     h('div', { class: 'stack', style: { gap: '4px', minWidth: 0 } },
       h('div', { class: 'row between wrap', style: { gap: '6px', alignItems: 'center' } },
-        h('span', { class: 'chip good', style: { fontSize: '.7rem', padding: '2px 7px' } }, '🎧 ' + (track.level || 'B1+') + ' · Hội thoại dài'),
+        h('span', { class: 'chip good', style: { fontSize: '.7rem', padding: '2px 7px' } }, '🎧 Hội thoại dài'),
         track.lines ? h('span', { class: 'small muted' }, track.lines.length + ' lượt nói') : null
       ),
       h('b', { style: { fontSize: '.98rem', lineHeight: 1.35 } }, track.title || 'Hội thoại thực tế'),
@@ -15144,7 +15144,7 @@ function lessonView(t, i, opts = null) {
       c.setCorrect(opts.find((x) => x.k === ex.q.a));
       const lblPart = ex.partTotal > 1 ? (' · Câu ' + ex.partIdx + '/' + ex.partTotal) : '';
       body = h('div', { class: 'stack' },
-        h('p', { class: 'label' }, '🎧 Kỹ năng Nghe · Hội thoại dài (' + ((ex.track && ex.track.level) || 'B1+') + ')' + lblPart),
+        h('p', { class: 'label' }, '🎧 Kỹ năng Nghe · Hội thoại dài' + lblPart),
         buildListenDialoguePanel(code, ex.track, { compact: true, allowScriptToggle: false }),
         code === 'en' && ex.q.q
           ? h('div', { class: 'row between', style: { alignItems: 'flex-start', gap: '8px' } },
@@ -16402,7 +16402,7 @@ function topicPicker(code, store, onChange) {
     const secs = buildCurriculumSections(code, d);
     return h('select', { 'aria-label': 'Chủ đề theo Section và Unit', onchange: (e) => { store[code] = e.target.value; onChange(); } },
       ...secs.flatMap((s) => s.units.map((u) => h('optgroup', {
-        label: `Section ${s.num}${s.level ? ' (' + s.level + ')' : ''} · Unit ${u.num}: ${u.name}`
+        label: `Section ${s.num} · Unit ${u.num}: ${u.name}`
       },
         ...u.topics.map((t) => h('option', { value: t.id, selected: t.id === store[code] }, `${t.pos}. ${t.sub || t.title}`))))));
   }
@@ -16652,7 +16652,7 @@ function renderLongListenSkillsSection(code, t) {
 
   return h('div', { class: 'panel card stack listen-skill-section', style: { gap: '10px', background: 'var(--surface)', borderRadius: '14px', padding: '14px', border: '1px solid var(--line)' } },
     h('div', { class: 'row between', style: { alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
-      h('b', { style: { fontSize: '1.02rem', color: 'var(--teal)', flex: '1 1 200px', minWidth: 0 } }, '🎧 Luyện nghe Hội thoại dài · Hiểu sâu (' + (t.level || 'B1+') + ')'),
+      h('b', { style: { fontSize: '1.02rem', color: 'var(--teal)', flex: '1 1 200px', minWidth: 0 } }, '🎧 Luyện nghe Hội thoại dài · Hiểu sâu'),
       scoreBadge
     ),
     tracks.length > 1 ? h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap' } },
