@@ -1,5 +1,5 @@
 {
-  "version": "4.03",
-  "build": "20261126-0400",
-  "message": "Sửa lỗi nhận diện giọng nói trên iOS/iPadOS, thêm nút Dừng & Chấm và nâng cấp AI chấm phát âm"
+  "version": "4.04",
+  "build": "20261126-0500",
+  "message": "Thêm 117+ bài học Dictation & Shadowing Studio (A1-C2) chuẩn Bibung kèm Nhật ký lỗi nghe"
 }

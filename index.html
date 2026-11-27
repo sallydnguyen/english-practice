@@ -1293,7 +1293,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/en.json và data/ielts_30day_listening.js,
    âm thanh thu sẵn nằm trong audio/ (audio/w*.json, audio/mail/, audio/listen/, audio/ielts/).
    ===================================================================== */
-const APP_BUILD_ID = '20261126-0400';
+const APP_BUILD_ID = '20261126-0500';
 const LANGS = {
   en: { label: 'English', vi: 'Tiếng Anh', short: 'Anh', folder: '', tts: 'en-US', rec: 'en-US', lang: 'en', cjk: false },
 };
@@ -1522,7 +1522,7 @@ function cleanPhaseName(name) {
 }
 const EN_CATEGORIES = CATEGORIES.en;
 let subjectsOpen = false;
-const fresh = () => ({ v: 2, name: '', goal: 20, lang: 'en', enCat: 'a1', zhCat: 'hsk1', jaCat: 'n5', onboarding: null, days: {}, dl: {}, pv: {}, srs: {}, lessons: {}, spoken: {}, written: {}, fill: {}, gq: {}, en_crash30: {}, ach: {}, del: {}, delAll: 0, t: 0 });
+const fresh = () => ({ v: 2, name: '', goal: 20, lang: 'en', enCat: 'a1', zhCat: 'hsk1', jaCat: 'n5', onboarding: null, days: {}, dl: {}, pv: {}, srs: {}, lessons: {}, spoken: {}, written: {}, fill: {}, gq: {}, en_crash30: {}, dictation: {}, dictationErrors: {}, ach: {}, del: {}, delAll: 0, t: 0 });
 let S = fresh();
 try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch (e) { /* bị chặn lưu trữ */ }
 S.lang = 'en';
@@ -1587,6 +1587,8 @@ function mergeState(a, b) {
     }
   }
 
+  out.dictation = Object.assign({}, older.dictation || {}, newer.dictation || {});
+  out.dictationErrors = Object.assign({}, older.dictationErrors || {}, newer.dictationErrors || {});
   out.fill = Object.assign({}, older.fill, newer.fill);
   out.ielts_challenge = Object.assign({}, older.ielts_challenge, newer.ielts_challenge);
   out.en_crash30 = Object.assign({}, older.en_crash30, newer.en_crash30);
@@ -6089,117 +6091,7 @@ function openOnboardingModal(force = false) {
 }
 
 function openDictationPractice() {
-  if (document.getElementById('dictation-overlay')) return;
-  const ITEMS = [
-    { lv: 'A2', en: 'What does your company do?', vi: 'Công ty của bạn hoạt động trong lĩnh vực gì?' },
-    { lv: 'A2', en: 'Where are your products made?', vi: 'Sản phẩm của bạn được sản xuất ở đâu?' },
-    { lv: 'B1', en: "Let's go through the agenda first.", vi: 'Hãy cùng xem qua chương trình họp trước nhé.' },
-    { lv: 'B1', en: 'Could you clarify the delivery date?', vi: 'Bạn có thể làm rõ ngày giao hàng được không?' },
-    { lv: 'B1', en: 'Could you take the minutes today?', vi: 'Hôm nay bạn có thể ghi biên bản cuộc họp giúp tôi không?' },
-    { lv: 'B2', en: "I'm responsible for order processing and reporting.", vi: 'Tôi phụ trách việc xử lý đơn hàng và báo cáo.' }
-  ];
-  let idx = 0;
-  let userText = '';
-  let checked = false;
-
-  const overlay = h('div', {
-    id: 'dictation-overlay',
-    style: {
-      position: 'fixed', inset: '0', zIndex: '9999',
-      background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
-    }
-  });
-  const card = h('div', {
-    class: 'panel stack',
-    style: { width: '100%', maxWidth: '540px', maxHeight: '90vh', overflowY: 'auto', padding: '20px', gap: '12px', borderRadius: '18px' }
-  });
-  overlay.appendChild(card);
-
-  const norm = (s) => s.toLowerCase().replace(/[.,!?;:'"’]/g, '').replace(/\s+/g, ' ').trim();
-
-  function render() {
-    card.innerHTML = '';
-    const item = ITEMS[idx];
-    card.appendChild(h('div', { class: 'row between', style: { alignItems: 'center' } },
-      h('div', { class: 'row', style: { gap: '8px', alignItems: 'center' } },
-        h('span', { style: { fontWeight: 700, fontSize: '1.05rem' } }, '🎧 Dictation · Nghe chép chính tả'),
-        h('span', { class: 'chip level ' + item.lv.toLowerCase() }, item.lv)
-      ),
-      h('button', { class: 'ghost mini', onclick: () => overlay.remove() }, '✕')
-    ));
-    card.appendChild(h('p', { class: 'small muted', style: { margin: 0 } }, `Câu ${idx + 1}/${ITEMS.length} · Bấm loa để nghe giọng chuẩn và chép lại nguyên văn:`));
-
-    card.appendChild(h('div', {
-      class: 'row',
-      style: { gap: '10px', alignItems: 'center', padding: '12px', borderRadius: '12px', background: 'var(--bg-soft, rgba(99,102,241,0.08))' }
-    },
-      spk('en', item.en),
-      spk('en', item.en, { slow: true }),
-      h('span', { class: 'small', style: { fontWeight: 600 } }, 'Nghe thường / Nghe chậm 🐢')
-    ));
-
-    const ta = h('textarea', {
-      rows: 2,
-      value: userText,
-      placeholder: 'Gõ lại câu tiếng Anh bạn nghe được...',
-      style: {
-        width: '100%', padding: '10px 12px', borderRadius: '10px',
-        border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--ink)',
-        fontSize: '.95rem', boxSizing: 'border-box', resize: 'vertical'
-      },
-      oninput: (e) => { userText = e.target.value; }
-    });
-    card.appendChild(ta);
-
-    if (checked) {
-      const targetWords = item.en.split(/\s+/);
-      const userWords = norm(userText).split(' ').filter(Boolean);
-      const isExact = norm(userText) === norm(item.en);
-      card.appendChild(h('div', {
-        class: 'panel stack',
-        style: { gap: '6px', padding: '12px', borderRadius: '12px', background: isExact ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)' }
-      },
-        h('div', { class: 'small', style: { fontWeight: 700 } }, isExact ? '✅ Chính xác hoàn toàn!' : '🔍 Đối chiếu từng từ:'),
-        h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '6px', lineHeight: 1.6 } },
-          targetWords.map((w, i) => {
-            const ok = userWords[i] === norm(w);
-            return h('span', {
-              style: {
-                padding: '2px 6px', borderRadius: '6px', fontWeight: 600, fontSize: '.9rem',
-                background: ok ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.18)',
-                color: ok ? '#059669' : '#dc2626'
-              }
-            }, w);
-          })
-        ),
-        h('div', { class: 'small muted' }, 'Nghĩa: ' + item.vi)
-      ));
-    }
-
-    card.appendChild(h('div', { class: 'row between', style: { marginTop: '4px' } },
-      h('button', {
-        class: 'ghost small',
-        disabled: idx === 0,
-        onclick: () => { if (idx > 0) { idx--; userText = ''; checked = false; render(); } }
-      }, '← Câu trước'),
-      h('div', { class: 'row', style: { gap: '8px' } },
-        !checked ? h('button', {
-          class: 'btn',
-          onclick: () => { checked = true; render(); }
-        }, 'Kiểm tra') : null,
-        h('button', {
-          class: checked ? 'btn' : 'ghost small',
-          onclick: () => {
-            if (idx < ITEMS.length - 1) { idx++; userText = ''; checked = false; render(); }
-            else overlay.remove();
-          }
-        }, idx < ITEMS.length - 1 ? 'Câu tiếp →' : 'Hoàn thành ✓')
-      )
-    ));
-  }
-  render();
-  document.body.appendChild(overlay);
+  go('dictation');
 }
 
 function openBugHunterPractice() {
@@ -6754,8 +6646,636 @@ function newsView() {
     })
   ));
 }
+let DICT_ACTIVE_ID = '';
+let DICT_MODE = 'dictation'; // 'dictation' | 'shadowing' | 'transcript'
+let DICT_LINE_IDX = 0;
+let DICT_FILTER_LV = 'all';
+let DICT_SEARCH_Q = '';
+let DICT_SHOW_ERRORS = false;
+const DICT_INPUTS = {};
+const DICT_CHECKS = {};
+const DICT_REVEALS = {};
+const DICT_PLAY_COUNTS = {};
+const DICT_SHADOW_RES = {};
+
+function buildDictationCatalog() {
+  const d = DATA.en;
+  if (!d) return [];
+  const hasAud = (txt) => !!(txt && d.audio && d.audio[plain(txt)]);
+  const groups = [];
+
+  if (d.crash30 && Array.isArray(d.crash30.days)) {
+    const lessons = d.crash30.days.map((day) => {
+      const lines = (day.dialogue && day.dialogue.lines ? day.dialogue.lines : [])
+        .filter((l) => l && hasAud(l.t))
+        .map((l) => ({ s: l.s || '', en: plain(l.t), vi: l.m || '' }));
+      if (!lines.length) return null;
+      return {
+        id: 'c30-' + day.n,
+        group: 'c30',
+        lv: 'B1',
+        title: 'Ngày ' + day.n + ': ' + day.title,
+        sub: day.sub || 'Hội thoại giao tiếp cấp tốc 30 ngày',
+        lines
+      };
+    }).filter(Boolean);
+    if (lessons.length) {
+      groups.push({
+        id: 'c30',
+        iconEl: '⚡',
+        title: '30 ngày Giao tiếp thực tế (B1)',
+        subtitle: '30 đoạn hội thoại đời sống & công sở ngắn gọn, tốc độ tự nhiên',
+        lessons
+      });
+    }
+  }
+
+  const catMeta = [
+    { id: 'a1', iconEl: '🌱', lv: 'A1', title: 'A1 · Giao tiếp nền tảng', subtitle: 'Chào hỏi, giới thiệu, sinh hoạt hàng ngày với câu ngắn rõ ràng' },
+    { id: 'a2', iconEl: '🌿', lv: 'A2', title: 'A2 · Đời sống & Du lịch', subtitle: 'Mua sắm, đi lại, nhà hàng, hỏi đường và sở thích cá nhân' },
+    { id: 'b1', iconEl: '📘', lv: 'B1', title: 'B1 · Công việc & Tình huống', subtitle: 'Hội thoại nhóm, trao đổi công việc, giải quyết tình huống thực tế' },
+    { id: 'b2', iconEl: '💼', lv: 'B2', title: 'B2 · Kinh doanh & Phỏng vấn', subtitle: 'Thuyết trình, đàm phán, phỏng vấn STAR và trao đổi chuyên nghiệp' },
+    { id: 'c12', iconEl: '🎓', lv: 'C1', title: 'C1–C2 · Học thuật & Chuyên sâu', subtitle: 'Chính sách kinh tế, quản trị chiến lược, pháp lý và công nghệ cao' }
+  ];
+
+  catMeta.forEach((cm) => {
+    const ts = (d.topics || []).filter((t) =>
+      cm.id === 'c12' ? (t.category === 'c1' || t.category === 'c2') : t.category === cm.id
+    );
+    const lessons = ts.map((t) => {
+      let lines = [];
+      if (Array.isArray(t.listening) && t.listening.length && Array.isArray(t.listening[0].lines)) {
+        lines = t.listening[0].lines
+          .filter((l) => l && hasAud(l.t))
+          .map((l) => ({ s: l.s || '', en: plain(l.t), vi: l.m || '' }));
+      }
+      if (!lines.length && Array.isArray(t.speak)) {
+        t.speak.forEach((sp) => {
+          (sp.lines || []).forEach((l) => {
+            if (l && hasAud(l.t)) lines.push({ s: '', en: plain(l.t), vi: l.m || '' });
+          });
+        });
+      }
+      if (!lines.length) return null;
+      const lv = (t.level || cm.lv || 'B1').toUpperCase();
+      return {
+        id: 'tp-' + t.id,
+        group: cm.id,
+        lv,
+        title: t.title,
+        sub: t.sub || t.title,
+        lines
+      };
+    }).filter(Boolean);
+
+    if (lessons.length) {
+      groups.push({
+        id: cm.id,
+        iconEl: cm.iconEl,
+        title: cm.title,
+        subtitle: cm.subtitle,
+        lessons
+      });
+    }
+  });
+
+  return groups;
+}
+
 function dictationTabView() {
-  go('practice');
+  const groups = buildDictationCatalog();
+  const allLessons = groups.flatMap((g) => g.lessons);
+  S.dictation = S.dictation || {};
+  S.dictationErrors = S.dictationErrors || {};
+
+  let seqPlaying = false;
+  const stopSeqPlay = () => { seqPlaying = false; stopSay(); };
+
+  // ===== MÀN HÌNH CHI TIẾT BÀI HỌC (DICTATION + SHADOWING + TRANSCRIPT) =====
+  if (DICT_ACTIVE_ID) {
+    const lesson = allLessons.find((l) => l.id === DICT_ACTIVE_ID);
+    if (!lesson) { DICT_ACTIVE_ID = ''; return dictationTabView(); }
+    if (DICT_LINE_IDX >= lesson.lines.length) DICT_LINE_IDX = 0;
+
+    preloadTextsAudio('en', lesson.lines.map((l) => l.en));
+    const line = lesson.lines[DICT_LINE_IDX];
+    const lineKey = lesson.id + ':' + DICT_LINE_IDX;
+    const savedInput = DICT_INPUTS[lineKey] || '';
+    const isChecked = !!DICT_CHECKS[lineKey];
+    const isRevealed = !!DICT_REVEALS[lineKey];
+    const playCount = DICT_PLAY_COUNTS[lineKey] || 0;
+
+    const saveLessonProgress = () => {
+      let sum = 0, cnt = 0;
+      lesson.lines.forEach((ln, i) => {
+        const k = lesson.id + ':' + i;
+        if (DICT_CHECKS[k]) {
+          sum += align('en', ln.en, DICT_INPUTS[k] || '').score;
+          cnt++;
+        }
+      });
+      if (cnt > 0) {
+        const avg = Math.round(sum / lesson.lines.length);
+        S.dictation[lesson.id] = { pct: Math.max(avg, (S.dictation[lesson.id] && S.dictation[lesson.id].pct) || 0), done: cnt, total: lesson.lines.length, ts: Date.now() };
+        save();
+      }
+    };
+
+    const modeTabs = h('div', { class: 'c30-tabs', role: 'tablist' },
+      [
+        ['dictation', '🎧 1. Dictation'],
+        ['shadowing', '🗣️ 2. Shadowing'],
+        ['transcript', '📜 3. Transcript']
+      ].map(([m, lbl]) => h('button', {
+        type: 'button',
+        role: 'tab',
+        'aria-selected': String(DICT_MODE === m),
+        class: DICT_MODE === m ? 'active' : '',
+        onclick: () => { stopSeqPlay(); DICT_MODE = m; dictationTabView(); }
+      }, lbl))
+    );
+
+    const linePills = h('div', { class: 'row wrap', style: { gap: '6px' } },
+      lesson.lines.map((ln, idx) => {
+        const k = lesson.id + ':' + idx;
+        const ok = DICT_CHECKS[k] && align('en', ln.en, DICT_INPUTS[k] || '').score >= 80;
+        const active = idx === DICT_LINE_IDX;
+        return h('button', {
+          type: 'button',
+          class: 'mini ' + (active ? 'primary' : (ok ? 'good' : 'ghost')),
+          style: {
+            minWidth: '36px', padding: '4px 9px', fontSize: '.78rem', fontWeight: 700,
+            border: active ? '2px solid var(--teal)' : '1px solid var(--line)',
+            background: !active && ok ? 'var(--good-bg)' : undefined,
+            color: !active && ok ? 'var(--good)' : undefined
+          },
+          onclick: () => { stopSeqPlay(); DICT_LINE_IDX = idx; dictationTabView(); }
+        }, ok ? ('✓ ' + (idx + 1)) : String(idx + 1));
+      })
+    );
+
+    const playSeqBtn = h('button', {
+      type: 'button',
+      class: 'ghost mini',
+      onclick: async () => {
+        if (seqPlaying) {
+          stopSeqPlay();
+          playSeqBtn.textContent = '▶ Nghe cả bài';
+          return;
+        }
+        seqPlaying = true;
+        playSeqBtn.textContent = '⏹ Dừng nghe cả bài';
+        for (let i = 0; i < lesson.lines.length; i++) {
+          if (!seqPlaying) break;
+          await sayWait('en', lesson.lines[i].en, false);
+        }
+        seqPlaying = false;
+        playSeqBtn.textContent = '▶ Nghe cả bài';
+      }
+    }, '▶ Nghe cả bài');
+
+    let panelBody = null;
+
+    if (DICT_MODE === 'dictation') {
+      const al = isChecked ? align('en', line.en, savedInput) : null;
+      const errObj = S.dictationErrors[lineKey];
+      const ta = h('textarea', {
+        rows: 3,
+        value: savedInput,
+        placeholder: 'Nghe audio rồi chép lại chính xác câu tiếng Anh (không mở transcript trước)...',
+        style: { width: '100%', minHeight: '84px', fontSize: '1rem', lineHeight: 1.5 },
+        oninput: (e) => {
+          DICT_INPUTS[lineKey] = e.target.value;
+          if (DICT_CHECKS[lineKey]) { DICT_CHECKS[lineKey] = false; }
+        }
+      });
+
+      const hintNextWord = () => {
+        const targetWords = line.en.split(/\s+/).filter(Boolean);
+        const curWords = (DICT_INPUTS[lineKey] || '').trim().split(/\s+/).filter(Boolean);
+        let matchCount = 0;
+        for (let i = 0; i < curWords.length && i < targetWords.length; i++) {
+          if (normEn(curWords[i]) === normEn(targetWords[i])) matchCount++;
+          else break;
+        }
+        if (matchCount < targetWords.length) {
+          const nextArr = targetWords.slice(0, matchCount + 1);
+          DICT_INPUTS[lineKey] = nextArr.join(' ') + ' ';
+          DICT_CHECKS[lineKey] = false;
+          dictationTabView();
+        }
+      };
+
+      const errTypes = [
+        ['vocab', '🆕 Từ mới chưa biết'],
+        ['sound', '🔗 Âm nối / Âm cuối'],
+        ['spelling', '✏️ Chính tả / Ngữ pháp']
+      ];
+
+      panelBody = h('div', { class: 'panel stack', style: { gap: '12px' } },
+        h('div', { class: 'row between wrap', style: { alignItems: 'center', gap: '8px' } },
+          h('span', { class: 'small', style: { fontWeight: 700, color: 'var(--teal)' } },
+            `Câu ${DICT_LINE_IDX + 1}/${lesson.lines.length}` + (line.s ? ` · Người nói ${line.s}` : '')
+          ),
+          h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } },
+            h('span', { class: 'chip small' }, `Đã nghe: ${playCount} lần`),
+            playSeqBtn
+          )
+        ),
+        linePills,
+        h('div', {
+          class: 'row between wrap',
+          style: { gap: '10px', padding: '12px', borderRadius: '12px', background: 'var(--sunk)', border: '1px solid var(--line)' }
+        },
+          h('div', { class: 'row', style: { gap: '8px', alignItems: 'center' } },
+            h('button', {
+              type: 'button',
+              class: 'primary mini',
+              onclick: () => {
+                DICT_PLAY_COUNTS[lineKey] = (DICT_PLAY_COUNTS[lineKey] || 0) + 1;
+                say('en', line.en, false);
+              }
+            }, '🔊 Nghe câu (1.0x)'),
+            h('button', {
+              type: 'button',
+              class: 'ghost mini',
+              style: { border: '1px solid var(--line)' },
+              onclick: () => {
+                DICT_PLAY_COUNTS[lineKey] = (DICT_PLAY_COUNTS[lineKey] || 0) + 1;
+                say('en', line.en, true);
+              }
+            }, '🐢 Chậm (0.75x)')
+          ),
+          h('span', { class: 'small muted' }, 'Giọng chuẩn bản xứ')
+        ),
+        ta,
+        h('div', { class: 'row wrap', style: { gap: '8px' } },
+          h('button', {
+            type: 'button',
+            class: 'primary',
+            style: { flex: '1 1 130px' },
+            onclick: () => {
+              DICT_CHECKS[lineKey] = true;
+              DICT_REVEALS[lineKey] = true;
+              saveLessonProgress();
+              dictationTabView();
+            }
+          }, '✓ Kiểm tra'),
+          h('button', {
+            type: 'button',
+            class: 'ghost mini',
+            style: { border: '1px solid var(--line)' },
+            onclick: hintNextWord
+          }, '💡 Gợi ý 1 từ'),
+          h('button', {
+            type: 'button',
+            class: 'ghost mini',
+            onclick: () => { DICT_REVEALS[lineKey] = !isRevealed; dictationTabView(); }
+          }, isRevealed ? '🙈 Ẩn đáp án' : '👁️ Mở đáp án')
+        ),
+        (isChecked || isRevealed) ? h('div', {
+          class: 'panel stack',
+          style: {
+            gap: '8px', padding: '12px', borderRadius: '12px',
+            background: al && al.score >= 80 ? 'var(--good-bg)' : 'var(--sunk)',
+            border: al && al.score >= 80 ? '1px solid var(--good)' : '1px solid var(--line)'
+          }
+        },
+          al ? h('div', { class: 'row between', style: { alignItems: 'center' } },
+            h('span', { class: 'small', style: { fontWeight: 700, color: al.score >= 80 ? 'var(--good)' : 'var(--amber)' } },
+              al.score >= 100 ? '🎉 Chính xác 100%!' : `🔍 Khớp ${al.score}% — Đối chiếu từng từ:`
+            ),
+            h('span', { class: 'chip small' }, al.score + '%')
+          ) : h('div', { class: 'small', style: { fontWeight: 700, color: 'var(--teal)' } }, '📖 Transcript câu này:'),
+          al ? h('div', { class: 'words', lang: 'en', style: { justifyContent: 'flex-start', fontSize: '1.02rem' } },
+            al.units.map((w, wi) => h('span', { class: al.hit[wi] ? 'hit' : 'miss' }, w))
+          ) : null,
+          h('div', { lang: 'en', style: { fontWeight: 700, fontSize: '1rem', color: 'var(--ink)' } }, line.en),
+          line.vi ? h('div', { class: 'small muted' }, 'Nghĩa: ' + line.vi) : null,
+          (al && al.score < 100) ? h('div', { class: 'stack', style: { gap: '6px', paddingTop: '6px', borderTop: '1px dashed var(--line)' } },
+            h('span', { class: 'small', style: { fontWeight: 700 } }, '📝 Ghi nhận nguyên nhân sai (Bibung Error Log):'),
+            h('div', { class: 'row wrap', style: { gap: '6px' } },
+              errTypes.map(([ek, elbl]) => {
+                const active = errObj && errObj.type === ek;
+                return h('button', {
+                  type: 'button',
+                  class: 'mini ' + (active ? 'accent' : 'ghost'),
+                  style: { border: '1px solid var(--line)', fontSize: '.78rem' },
+                  onclick: () => {
+                    S.dictationErrors[lineKey] = {
+                      key: lineKey, lessonId: lesson.id, lessonTitle: lesson.title, lv: lesson.lv,
+                      lineIdx: DICT_LINE_IDX, en: line.en, vi: line.vi,
+                      userText: savedInput, type: ek, ts: Date.now()
+                    };
+                    save();
+                    toast('Đã lưu vào Nhật ký lỗi nghe!');
+                    dictationTabView();
+                  }
+                }, elbl);
+              })
+            )
+          ) : null
+        ) : null,
+        h('div', { class: 'row between', style: { gap: '8px' } },
+          h('button', {
+            type: 'button',
+            class: 'ghost mini',
+            disabled: DICT_LINE_IDX === 0,
+            onclick: () => { if (DICT_LINE_IDX > 0) { DICT_LINE_IDX--; dictationTabView(); } }
+          }, '← Câu trước'),
+          DICT_LINE_IDX < lesson.lines.length - 1
+            ? h('button', {
+                type: 'button',
+                class: 'primary mini',
+                onclick: () => { DICT_LINE_IDX++; dictationTabView(); }
+              }, 'Câu tiếp →')
+            : h('button', {
+                type: 'button',
+                class: 'accent mini',
+                onclick: () => { DICT_MODE = 'shadowing'; DICT_LINE_IDX = 0; dictationTabView(); }
+              }, '🗣️ Sang bước Shadowing →')
+        )
+      );
+    } else if (DICT_MODE === 'shadowing') {
+      const shRes = DICT_SHADOW_RES[lineKey];
+      const statusEl = h('div', { class: 'stack', style: { gap: '4px' } });
+      const drawShadowStatus = (r) => {
+        if (!r) { statusEl.replaceChildren(); return; }
+        const al = align('en', line.en, r.said);
+        statusEl.replaceChildren(
+          h('div', { class: 'words', lang: 'en', style: { justifyContent: 'flex-start', fontSize: '1.02rem' } },
+            al.units.map((w, wi) => h('span', { class: al.hit[wi] ? 'hit' : 'miss' }, w))
+          ),
+          h('div', { class: 'small', style: { fontWeight: 700, color: al.score >= 70 ? 'var(--good)' : 'var(--amber)' } },
+            `Bạn nói: “${r.said}” · Độ chính xác ${al.score}%` + (al.score >= 70 ? ' ✓ Nhịp rất tốt!' : ' · Nghe lại và nói theo nhịp nhé')
+          )
+        );
+      };
+      if (shRes) drawShadowStatus(shRes);
+
+      const shadowBtn = h('button', { type: 'button', class: 'accent block' }, shRes ? '🔄 Shadowing lại câu này' : '🎙️ Bấm nói Shadowing');
+      let listening = false;
+      shadowBtn.onclick = async () => {
+        if (listening) {
+          if (ACTIVE_STOP_FN) ACTIVE_STOP_FN(true);
+          return;
+        }
+        listening = true;
+        shadowBtn.style.background = 'var(--bad)';
+        shadowBtn.style.borderColor = 'var(--bad)';
+        shadowBtn.style.color = '#fff';
+        shadowBtn.textContent = '⏹ Dừng & Chấm điểm';
+        statusEl.replaceChildren(h('div', { class: 'small muted' }, '🎙️ Đang nghe... Nói đuổi theo nhịp câu mẫu rồi bấm Dừng!'));
+        const said = await tryListen('en', (interim) => {
+          if (interim && listening) statusEl.textContent = '🎧 ' + interim;
+        }, { expected: line.en });
+        listening = false;
+        shadowBtn.style.background = '';
+        shadowBtn.style.borderColor = '';
+        shadowBtn.style.color = '';
+        if (said) {
+          const al = align('en', line.en, said);
+          DICT_SHADOW_RES[lineKey] = { said, score: al.score };
+          shadowBtn.textContent = '🔄 Shadowing lại câu này';
+          drawShadowStatus(DICT_SHADOW_RES[lineKey]);
+        } else {
+          shadowBtn.textContent = DICT_SHADOW_RES[lineKey] ? '🔄 Shadowing lại câu này' : '🎙️ Bấm nói Shadowing';
+          if (DICT_SHADOW_RES[lineKey]) drawShadowStatus(DICT_SHADOW_RES[lineKey]);
+          else statusEl.replaceChildren(h('div', { class: 'small muted' }, '⚠️ Chưa nghe rõ giọng nói. Hãy bấm thử lại nhé.'));
+        }
+      };
+
+      panelBody = h('div', { class: 'panel stack', style: { gap: '12px' } },
+        h('div', { class: 'row between', style: { alignItems: 'center' } },
+          h('span', { class: 'small', style: { fontWeight: 700, color: 'var(--teal)' } }, `🗣️ Shadowing · Câu ${DICT_LINE_IDX + 1}/${lesson.lines.length}`),
+          h('span', { class: 'chip small' }, 'Ưu tiên nhịp & trọng âm')
+        ),
+        linePills,
+        h('div', { class: 'stack', style: { gap: '6px', padding: '12px', borderRadius: '12px', background: 'var(--sunk)', border: '1px solid var(--line)' } },
+          h('div', { lang: 'en', style: { fontSize: '1.12rem', fontWeight: 700, lineHeight: 1.45 } }, line.en),
+          line.vi ? h('div', { class: 'small muted' }, line.vi) : null,
+          h('div', { class: 'row', style: { gap: '8px', marginTop: '4px' } },
+            spk('en', line.en),
+            spk('en', line.en, { slow: true }),
+            h('span', { class: 'small muted' }, 'Nghe mẫu rồi lặp lại sau nửa nhịp')
+          )
+        ),
+        shadowBtn,
+        statusEl,
+        h('div', { class: 'row between', style: { gap: '8px' } },
+          h('button', {
+            type: 'button',
+            class: 'ghost mini',
+            disabled: DICT_LINE_IDX === 0,
+            onclick: () => { if (DICT_LINE_IDX > 0) { DICT_LINE_IDX--; dictationTabView(); } }
+          }, '← Câu trước'),
+          DICT_LINE_IDX < lesson.lines.length - 1
+            ? h('button', {
+                type: 'button',
+                class: 'primary mini',
+                onclick: () => { DICT_LINE_IDX++; dictationTabView(); }
+              }, 'Câu tiếp →')
+            : h('button', {
+                type: 'button',
+                class: 'good mini',
+                onclick: () => { DICT_ACTIVE_ID = ''; dictationTabView(); }
+              }, '✓ Hoàn thành bài học')
+        )
+      );
+    } else {
+      panelBody = h('div', { class: 'panel stack', style: { gap: '10px' } },
+        h('div', { class: 'row between wrap', style: { alignItems: 'center', gap: '8px' } },
+          h('b', {}, '📜 Toàn bộ Transcript hội thoại'),
+          playSeqBtn
+        ),
+        lesson.lines.map((ln, idx) => h('div', {
+          class: 'row between',
+          style: { gap: '10px', padding: '8px 4px', borderBottom: '1px dashed var(--line)', alignItems: 'center' }
+        },
+          h('div', { class: 'stack', style: { gap: '2px', flex: 1, minWidth: 0 } },
+            h('div', { lang: 'en', style: { fontWeight: 600, fontSize: '.96rem' } },
+              (ln.s ? ln.s + ': ' : (idx + 1) + '. ') + ln.en
+            ),
+            ln.vi ? h('div', { class: 'small muted' }, ln.vi) : null
+          ),
+          h('div', { class: 'row', style: { gap: '4px', flexShrink: 0 } },
+            spk('en', ln.en),
+            h('button', {
+              type: 'button',
+              class: 'ghost mini',
+              style: { fontSize: '.74rem', padding: '4px 8px' },
+              onclick: () => { DICT_MODE = 'dictation'; DICT_LINE_IDX = idx; dictationTabView(); }
+            }, 'Chép')
+          )
+        ))
+      );
+    }
+
+    mount(h('div', { class: 'stack-lg', style: { gap: '12px' } },
+      h('div', { class: 'row between wrap', style: { alignItems: 'center', gap: '8px' } },
+        h('button', {
+          type: 'button',
+          class: 'ghost mini',
+          onclick: () => { stopSeqPlay(); DICT_ACTIVE_ID = ''; dictationTabView(); }
+        }, '← Danh mục bài nghe'),
+        h('span', { class: 'chip level ' + lesson.lv.toLowerCase() }, lesson.lv + ' · ' + lesson.lines.length + ' câu')
+      ),
+      h('div', { class: 'stack', style: { gap: '2px' } },
+        h('h2', { style: { margin: 0 } }, lesson.title),
+        h('p', { class: 'small muted', style: { margin: 0 } }, lesson.sub)
+      ),
+      modeTabs,
+      panelBody
+    ));
+    return;
+  }
+
+  // ===== MÀN HÌNH DANH MỤC (ACCORDION CHUẨN GEMINI.MD + NHẬT KÝ LỖI BIBUNG) =====
+  const errEntries = Object.values(S.dictationErrors || {}).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  const filters = [
+    ['all', 'Tất cả (' + allLessons.length + ')'],
+    ['c30', '30 ngày B1'],
+    ['a1', 'A1'],
+    ['a2', 'A2'],
+    ['b1', 'B1'],
+    ['b2', 'B2'],
+    ['c12', 'C1–C2']
+  ];
+  const qNorm = DICT_SEARCH_Q.trim().toLowerCase();
+  const visibleGroups = groups.filter((g) => DICT_FILTER_LV === 'all' || g.id === DICT_FILTER_LV).map((g) => {
+    const filtered = qNorm
+      ? g.lessons.filter((l) => (l.title + ' ' + l.sub).toLowerCase().includes(qNorm))
+      : g.lessons;
+    return Object.assign({}, g, { lessons: filtered });
+  }).filter((g) => g.lessons.length > 0);
+
+  const errPanel = DICT_SHOW_ERRORS ? h('div', { class: 'panel stack', style: { gap: '8px', borderColor: 'var(--amber)' } },
+    h('div', { class: 'row between', style: { alignItems: 'center' } },
+      h('b', { style: { color: 'var(--amber)' } }, `📝 Nhật ký lỗi nghe (${errEntries.length} mục)`),
+      h('button', { type: 'button', class: 'ghost mini', onclick: () => { DICT_SHOW_ERRORS = false; dictationTabView(); } }, 'Đóng ✕')
+    ),
+    errEntries.length
+      ? errEntries.slice(0, 20).map((er) => {
+          const typeLbl = er.type === 'vocab' ? '🆕 Từ mới' : (er.type === 'sound' ? '🔗 Âm nối/cuối' : '✏️ Chính tả');
+          return h('div', {
+            class: 'panel stack',
+            style: { gap: '4px', padding: '10px', borderRadius: '10px', background: 'var(--sunk)' }
+          },
+            h('div', { class: 'row between wrap', style: { gap: '6px', alignItems: 'center' } },
+              h('span', { class: 'chip small' }, typeLbl),
+              h('span', { class: 'small muted' }, er.lessonTitle)
+            ),
+            h('div', { lang: 'en', style: { fontWeight: 700, fontSize: '.94rem' } }, er.en),
+            er.userText ? h('div', { class: 'small', style: { color: 'var(--bad)' } }, 'Bạn từng chép: “' + er.userText + '”') : null,
+            er.vi ? h('div', { class: 'small muted' }, er.vi) : null,
+            h('div', { class: 'row between', style: { gap: '6px', marginTop: '4px' } },
+              h('div', { class: 'row', style: { gap: '6px' } },
+                spk('en', er.en),
+                h('button', {
+                  type: 'button',
+                  class: 'primary mini',
+                  onclick: () => {
+                    DICT_SHOW_ERRORS = false;
+                    DICT_ACTIVE_ID = er.lessonId;
+                    DICT_LINE_IDX = er.lineIdx || 0;
+                    DICT_MODE = 'dictation';
+                    dictationTabView();
+                  }
+                }, '🎧 Luyện lại')
+              ),
+              h('button', {
+                type: 'button',
+                class: 'ghost mini',
+                onclick: () => { delete S.dictationErrors[er.key]; save(); dictationTabView(); }
+              }, '✓ Đã thuộc')
+            )
+          );
+        })
+      : h('p', { class: 'small muted', style: { margin: 0 } }, 'Chưa có lỗi nghe nào. Khi làm Dictation có câu chưa đúng, hãy chọn nguyên nhân sai để lưu vào đây ôn lại!')
+  ) : null;
+
+  const userLevel = (S.onboarding && S.onboarding.level) || S.enCat || 'a1';
+  const wrap = h('div', { class: 'stack-lg', style: { gap: '12px' } },
+    h('div', { class: 'row between wrap', style: { alignItems: 'center', gap: '8px' } },
+      h('button', { type: 'button', class: 'ghost mini', onclick: () => go('practice') }, '← Luyện tập'),
+      h('button', {
+        type: 'button',
+        class: (errEntries.length ? 'accent' : 'ghost') + ' mini',
+        onclick: () => { DICT_SHOW_ERRORS = !DICT_SHOW_ERRORS; dictationTabView(); }
+      }, `📝 Nhật ký lỗi (${errEntries.length})`)
+    ),
+    h('div', { class: 'panel stack', style: { gap: '4px', padding: '14px' } },
+      h('h2', { style: { margin: 0, fontSize: '1.2rem' } }, '🎧 Dictation & Shadowing Studio'),
+      h('p', { class: 'small muted', style: { margin: 0 } }, 'Quy trình Bibung: Nghe không nhìn chữ ➔ Chép chính tả & phân loại lỗi ➔ Nói đuổi Shadowing (100% giọng người thật).')
+    ),
+    errPanel,
+    h('div', { class: 'cat-bar' },
+      filters.map(([k, lbl]) => h('button', {
+        type: 'button',
+        class: 'cat-pill' + (DICT_FILTER_LV === k ? ' active' : ''),
+        onclick: () => { DICT_FILTER_LV = k; dictationTabView(); }
+      }, lbl))
+    ),
+    h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } },
+      h('input', Object.assign({
+        type: 'search',
+        class: 'dict-studio-search',
+        value: DICT_SEARCH_Q,
+        placeholder: '🔍 Tìm chủ đề bài nghe (VD: meeting, coffee, hotel, AI...)',
+        style: { flex: 1, minHeight: '42px', padding: '8px 12px' }
+      }, searchInputHandlers('dict-studio-search', (v) => { DICT_SEARCH_Q = v; }, dictationTabView))),
+      DICT_SEARCH_Q ? h('button', { type: 'button', class: 'ghost mini', onclick: () => { DICT_SEARCH_Q = ''; dictationTabView(); } }, '✕') : null
+    ),
+    h('div', { class: 'acc-toolbar' },
+      h('span', { class: 'small muted', style: { fontWeight: 600 } },
+        `📚 ${visibleGroups.length} cấp độ · ${visibleGroups.reduce((s, g) => s + g.lessons.length, 0)} bài nghe chuẩn Studio`
+      ),
+      makeToggleAllBtn(() => wrap, 'details.dict-acc')
+    ),
+    ...visibleGroups.map((grp, gi) => {
+      const doneCnt = grp.lessons.filter((l) => S.dictation[l.id] && S.dictation[l.id].pct >= 80).length;
+      const defOpen = DICT_FILTER_LV !== 'all' || !!qNorm || grp.id === userLevel || (gi === 0 && !['a1', 'a2', 'b1', 'b2', 'c12'].includes(userLevel));
+      return accordionItem({
+        cls: 'acc-card dict-acc',
+        iconEl: grp.iconEl,
+        title: grp.title,
+        subtitle: grp.subtitle,
+        defaultOpen: defOpen,
+        chips: [
+          h('span', { class: 'chip' + (doneCnt === grp.lessons.length ? ' good' : ''), style: { fontSize: '.74rem', fontWeight: 700 } },
+            doneCnt > 0 ? `${doneCnt}/${grp.lessons.length} đạt` : `${grp.lessons.length} bài`
+          )
+        ],
+        body: grp.lessons.map((ls) => {
+          const st = S.dictation[ls.id];
+          return h('button', {
+            type: 'button',
+            class: 'lesson',
+            style: { marginTop: '6px' },
+            onclick: () => {
+              DICT_ACTIVE_ID = ls.id;
+              DICT_MODE = 'dictation';
+              DICT_LINE_IDX = 0;
+              dictationTabView();
+            }
+          },
+            h('span', { class: 'dot', style: st && st.pct >= 80 ? { background: 'var(--good-bg)', color: 'var(--good)' } : undefined },
+              st && st.pct >= 80 ? '✓' : '🎧'
+            ),
+            h('div', { class: 'meta' },
+              h('b', { style: { display: 'block', fontSize: '.93rem' } }, ls.title),
+              h('span', { class: 'small muted' }, ls.sub)
+            ),
+            h('div', { class: 'row', style: { gap: '4px', flexShrink: 0 } },
+              st ? h('span', { class: 'chip ' + (st.pct >= 80 ? 'good' : 'accent') }, st.pct + '%') : null,
+              h('span', { class: 'chip small' }, ls.lines.length + ' câu')
+            )
+          );
+        })
+      });
+    })
+  );
+  mount(wrap);
 }
 
 function practiceTabView() {
@@ -6763,12 +7283,12 @@ function practiceTabView() {
     {
       iconEl: '🎧',
       title: 'Nghe & Nói (Dictation · Shadowing)',
-      subtitle: 'Nghe chép chính tả giọng bản xứ và luyện nói đuổi theo nhịp điệu',
-      chip: '2 bài luyện',
+      subtitle: 'Kho 117+ bài nghe chép chính tả & nói đuổi theo cấp độ A1–C2',
+      chip: '117+ bài',
       defaultOpen: true,
       items: [
-        { icon: '🎧', title: 'Dictation · Nghe chép chính tả', desc: 'Nghe từng câu chuẩn bản xứ, chép lại và đối chiếu từng từ.', badge: 'Nghe', fn: openDictationPractice },
-        { icon: '🗣️', title: 'Shadowing · Luyện nói đuổi', desc: 'Nghe câu mẫu, lặp lại theo nhịp và trọng âm để phản xạ tự nhiên.', badge: 'Nói', fn: () => { SKILL_TAB = 'speak'; go('skills'); } }
+        { icon: '🎧', title: 'Dictation & Shadowing Studio (A1–C2)', desc: 'Nghe giọng chuẩn, chép chính tả, phân loại lỗi nghe & luyện Shadowing.', badge: '117+ bài', fn: () => go('dictation') },
+        { icon: '🗣️', title: 'Shadowing · Hội thoại theo chủ đề', desc: 'Luyện nói đuổi các mẫu hội thoại trong từng chủ đề đã học.', badge: 'Nói', fn: () => { SKILL_TAB = 'speak'; go('skills'); } }
       ]
     },
     {
