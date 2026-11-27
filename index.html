@@ -1422,7 +1422,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/en.json và data/ielts_30day_listening.js,
    âm thanh thu sẵn nằm trong audio/ (audio/w*.json, audio/mail/, audio/listen/, audio/ielts/).
    ===================================================================== */
-const APP_BUILD_ID = '20261126-0830';
+const APP_BUILD_ID = '20261126-0900';
 const LANGS = {
   en: { label: 'English', vi: 'Tiếng Anh', short: 'Anh', folder: '', tts: 'en-US', rec: 'en-US', lang: 'en', cjk: false },
 };
@@ -8030,12 +8030,18 @@ function homeView(opts = {}) {
           h('button', {
             type: 'button',
             class: 'duo-guidebook-btn',
+            title: `Thi vượt cấp nhanh toàn bộ Unit ${u.num} (đạt ≥ 80% để hoàn thành)`,
             onclick: (e) => {
               e.preventDefault();
               e.stopPropagation();
-              openUnitGuidebookModal(u, u.num - 1);
+              startCategoryExam(S.lang, {
+                id: 'unit-' + u.id.replace(/[^a-z0-9_-]/gi, '-'),
+                level: `Section ${u.secNum}, Unit ${u.num}`,
+                short: `Unit ${u.num}`,
+                name: u.name
+              }, u.topics);
             }
-          }, '📖 GUIDEBOOK'),
+          }, '🚀 Vượt cấp độ'),
           h('span', { class: 'acc-arrow', 'aria-hidden': 'true' }, '▾')
         ),
         h('div', { class: 'duo-path' },
@@ -8148,7 +8154,7 @@ function homeView(opts = {}) {
     topicsNode,
     catExamCard,
     metaFooterCard,
-    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.11 · Section (Cấp độ) & Unit')));
+    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.12 · Section (Cấp độ) & Unit')));
   if (_keepY != null) window.scrollTo(0, _keepY);
 }
 
