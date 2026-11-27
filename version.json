@@ -1,5 +1,5 @@
 {
-  "version": "4.21",
-  "build": "20261127-0510",
-  "message": "Chỉ tính thời gian học khi thật sự bấm vào học/luyện tập, dừng đếm khi ở trang chủ hoặc màn hình chờ"
+  "version": "4.22",
+  "build": "20261127-0540",
+  "message": "Xóa dead code (mã CJK, Kanji, bộ chọn ngôn ngữ cũ và các nhánh không dùng tới) giúp app nhẹ và mượt hơn"
 }
