@@ -1,5 +1,5 @@
 {
-  "version": "4.08",
-  "build": "20261126-0700",
-  "message": "Chuẩn hóa giao diện Bubble 3D theo hình mẫu, sửa lỗi đường cong S-path và căn giữa popover chính xác"
+  "version": "4.09",
+  "build": "20261126-0730",
+  "message": "Sắp xếp toàn bộ bài học và bộ lọc trang chủ theo 18 Unit chủ đề (thay vì chia theo cấp độ A1–C2)"
 }
