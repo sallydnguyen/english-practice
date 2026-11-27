@@ -1,5 +1,5 @@
 {
-  "version": "4.07",
-  "build": "20261126-0630",
-  "message": "Giao diện Bubble Path chuẩn Duolingo, modal Guidebook & dropdown chọn tất cả (A1–C2) + nhảy nhanh chủ đề"
+  "version": "4.08",
+  "build": "20261126-0700",
+  "message": "Chuẩn hóa giao diện Bubble 3D theo hình mẫu, sửa lỗi đường cong S-path và căn giữa popover chính xác"
 }
