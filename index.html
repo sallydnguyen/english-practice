@@ -1377,7 +1377,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/en.json và data/ielts_30day_listening.js,
    âm thanh thu sẵn nằm trong audio/ (audio/w*.json, audio/mail/, audio/listen/, audio/ielts/).
    ===================================================================== */
-const APP_BUILD_ID = '20261127-0400';
+const APP_BUILD_ID = '20261127-0445';
 const LANGS = {
   en: { label: 'English', vi: 'Tiếng Anh', short: 'Anh', folder: '', tts: 'en-US', rec: 'en-US', lang: 'en', cjk: false },
 };
@@ -1692,7 +1692,7 @@ function buildCurriculumSections(code, d) {
   }).filter((s) => s.topics.length > 0);
 }
 let subjectsOpen = false;
-const fresh = () => ({ v: 2, name: '', goal: 20, lang: 'en', enCat: 'all', enUnit: 'all', zhCat: 'hsk1', jaCat: 'n5', onboarding: null, days: {}, dl: {}, pv: {}, srs: {}, lessons: {}, spoken: {}, written: {}, fill: {}, gq: {}, en_crash30: {}, dictation: {}, dictationErrors: {}, ach: {}, del: {}, delAll: 0, t: 0 });
+const fresh = () => ({ v: 2, name: '', goal: 20, lang: 'en', enCat: 'all', enUnit: 'all', zhCat: 'hsk1', jaCat: 'n5', onboarding: null, days: {}, dl: {}, pv: {}, srs: {}, lessons: {}, spoken: {}, written: {}, fill: {}, gq: {}, catExams: {}, en_crash30: {}, dictation: {}, dictationErrors: {}, ach: {}, del: {}, delAll: 0, t: 0 });
 let S = fresh();
 try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch (e) { /* bị chặn lưu trữ */ }
 S.lang = 'en';
@@ -1760,6 +1760,16 @@ function mergeState(a, b) {
   out.dictation = Object.assign({}, older.dictation || {}, newer.dictation || {});
   out.dictationErrors = Object.assign({}, older.dictationErrors || {}, newer.dictationErrors || {});
   out.fill = Object.assign({}, older.fill, newer.fill);
+  out.catExams = Object.assign({}, older.catExams || {});
+  for (const [ck, cv] of Object.entries(newer.catExams || {})) {
+    const pv = out.catExams[ck];
+    if (!pv) { out.catExams[ck] = cv; continue; }
+    out.catExams[ck] = {
+      best: Math.max(pv.best || 0, (cv && cv.best) || 0),
+      tries: Math.max(pv.tries || 0, (cv && cv.tries) || 0),
+      last: Math.max(pv.last || 0, (cv && cv.last) || 0)
+    };
+  }
   out.ielts_challenge = Object.assign({}, older.ielts_challenge, newer.ielts_challenge);
   out.en_crash30 = Object.assign({}, older.en_crash30, newer.en_crash30);
   out.ach = Object.assign({}, older.ach, newer.ach);
@@ -7594,17 +7604,17 @@ function homeView(opts = {}) {
     },
       h('div', { style: { flex: '1 1 200px', minWidth: 0 } },
         h('div', { style: { fontSize: '.88rem', fontWeight: 700, color: 'var(--amber)' } },
-          '🚀 Kiểm tra vượt cấp ' + lvLabel + ' (' + catDoneTopics + '/' + filteredTopics.length + ' bài)'
+          '🚀 Bộ đề vượt cấp ' + lvLabel + ' (' + catDoneTopics + '/' + filteredTopics.length + ' bài)'
         ),
         h('div', { class: 'small muted', style: { fontSize: '.76rem', marginTop: '2px' } },
-          'Đạt ≥ 80% để pass & hoàn thành 100% chuyên đề ' + curCatObj.name
+          'Nhiều bộ đề xào chẻ từ vựng, nghe, đọc & viết toàn cấp · Đạt ≥ 80% để pass 100% ' + curCatObj.name
         )
       ),
       h('button', {
         class: 'accent mini',
         style: { whiteSpace: 'nowrap', padding: '7px 12px', fontSize: '.82rem', fontWeight: 700, flexShrink: 0 },
         onclick: () => startCategoryExam(S.lang, curCatObj, filteredTopics)
-      }, 'Thi vượt cấp →')
+      }, 'Chọn đề vượt cấp →')
     );
   })();
 
@@ -7666,7 +7676,7 @@ function homeView(opts = {}) {
           h('button', {
             type: 'button',
             class: 'duo-guidebook-btn',
-            title: `Thi vượt cấp nhanh toàn bộ Unit ${u.num} (đạt ≥ 80% để hoàn thành)`,
+            title: `Chọn bộ đề vượt cấp & xáo trộn câu hỏi cho Unit ${u.num} (đạt ≥ 80% để hoàn thành)`,
             onclick: (e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -7714,7 +7724,7 @@ function homeView(opts = {}) {
         h('button', {
           type: 'button',
           class: 'sec-test-btn',
-          title: `Học vượt cấp toàn bộ Section ${sec.num} (${sec.level || sec.name}) · Đạt ≥ 80% để pass cả Section`,
+          title: `Chọn bộ đề vượt cấp & xáo trộn bài học cho Section ${sec.num} (${sec.level || sec.name}) · Đạt ≥ 80% để pass cả Section`,
           onclick: (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -7848,7 +7858,7 @@ function homeView(opts = {}) {
     topicsNode,
     catExamCard,
     metaFooterCard,
-    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.19 · Section (Cấp độ) & Unit')));
+    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.20 · Bộ đề vượt cấp & xáo trộn')));
   if (_keepY != null) window.scrollTo(0, _keepY);
 }
 
@@ -15009,90 +15019,485 @@ function createTwoPartFill(code, fillObj, opts) {
   return api;
 }
 
-function buildCategoryExamSteps(code, topics) {
-  const d = DATA[code];
-  const allWords = d ? d.topics.flatMap((x) => x.vocab || []) : [];
-  const opt = (v, key) => shuffle([v, ...sample(allWords, 3, (x) => x.id === v.id || x[key] === v[key])]);
-  const steps = [];
+function examHashSeed(str) {
+  let hVal = 2166136261 >>> 0;
+  const s = String(str || '');
+  for (let i = 0; i < s.length; i++) {
+    hVal ^= s.charCodeAt(i);
+    hVal = Math.imul(hVal, 16777619) >>> 0;
+  }
+  return hVal || 1;
+}
+function makeExamRng(seed) {
+  let a = (seed >>> 0) || 1;
+  return function () {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function shuffleWith(arr, rng = Math.random) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function sampleWith(arr, n, notFn, rng = Math.random) {
+  return shuffleWith(arr.filter((x) => !notFn || !notFn(x)), rng).slice(0, n);
+}
+function examSkillBucket(step) {
+  if (!step) return 'other';
+  if (step.type === 'meaning' || step.type === 'reverse') return 'vocab';
+  if (step.type === 'listen' || step.type === 'listen_dlg') return 'audio';
+  if (step.type === 'quiz') return 'reading';
+  if (step.type === 'gquiz' || step.type === 'order' || step.type === 'fill') return 'writing';
+  return step.type;
+}
+function interleaveExamSteps(steps, rng = Math.random) {
+  const pool = shuffleWith(steps, rng);
+  const out = [];
+  while (pool.length) {
+    const prev1 = out[out.length - 1];
+    const prev2 = out[out.length - 2];
+    const prev1Bucket = examSkillBucket(prev1);
+    const prev2Bucket = examSkillBucket(prev2);
+    const prev1Tid = prev1 && prev1.topic ? prev1.topic.id : null;
+    let bestIdx = 0;
+    let bestScore = Infinity;
+    for (let i = 0; i < pool.length; i++) {
+      const cand = pool[i];
+      const b = examSkillBucket(cand);
+      const tid = cand.topic ? cand.topic.id : null;
+      let penalty = 0;
+      if (prev1 && cand.type === prev1.type) penalty += 6;
+      if (b === prev1Bucket) penalty += 3;
+      if (prev2 && b === prev2Bucket) penalty += 1;
+      if (prev1Tid && tid && tid === prev1Tid) penalty += 4;
+      if (penalty < bestScore) {
+        bestScore = penalty;
+        bestIdx = i;
+        if (penalty === 0) break;
+      }
+    }
+    out.push(pool.splice(bestIdx, 1)[0]);
+  }
+  return out;
+}
+function getCategoryExamCatalog(catObj, topics) {
+  const n = (topics || []).length;
+  const presets = [
+    {
+      variantIdx: 0,
+      icon: '📝',
+      mode: 'balanced',
+      name: 'Đề số 1 · Tổng hợp cân bằng',
+      subtitle: 'Xào chẻ đồng đều Từ vựng, Nghe hiểu, Tình huống, Ngữ cảnh, Viết câu & Email'
+    },
+    {
+      variantIdx: 1,
+      icon: '⚡',
+      mode: 'quiz',
+      name: 'Đề số 2 · Đảo mảng & Tình huống',
+      subtitle: 'Xoay vòng lượt từ vựng mới, tăng cường tình huống đọc hiểu & điền cấu trúc câu'
+    },
+    {
+      variantIdx: 2,
+      icon: '🔥',
+      mode: 'audio',
+      name: 'Đề số 3 · Xào chẻ Nghe & Phản xạ',
+      subtitle: 'Đổi nhóm từ vựng & hội thoại khác biệt, nhấn mạnh nghe hiểu và phản xạ nhanh'
+    },
+    {
+      variantIdx: 3,
+      icon: '🏆',
+      mode: 'deep',
+      name: 'Đề số 4 · Thử thách Toàn diện',
+      subtitle: 'Xào chẻ chuyên sâu vòng lặp toàn cấp với tổ hợp câu hỏi ít trùng lặp'
+    }
+  ];
+  const count = n >= 10 ? 4 : (n >= 4 ? 3 : 2);
+  return presets.slice(0, count).map((p) => Object.assign({}, p, {
+    totalVariants: count,
+    seedKey: (catObj && catObj.id ? catObj.id : 'all') + ':v' + p.variantIdx
+  }));
+}
+function summarizeExamSteps(steps) {
+  const bySkill = { vocab: 0, listen: 0, quiz: 0, cloze: 0, order: 0, fill: 0, other: 0 };
+  const topicTitles = [];
+  const seenT = new Set();
+  (steps || []).forEach((s) => {
+    if (s.type === 'meaning' || s.type === 'reverse') bySkill.vocab++;
+    else if (s.type === 'listen' || s.type === 'listen_dlg') bySkill.listen++;
+    else if (s.type === 'quiz') bySkill.quiz++;
+    else if (s.type === 'gquiz') bySkill.cloze++;
+    else if (s.type === 'order') bySkill.order++;
+    else if (s.type === 'fill') bySkill.fill++;
+    else bySkill.other++;
+    if (s.topic && s.topic.id && !seenT.has(s.topic.id)) {
+      seenT.add(s.topic.id);
+      topicTitles.push(s.topic.sub || s.topic.title);
+    }
+  });
+  return { count: (steps || []).length, bySkill, topicTitles, usedTopicsCount: seenT.size };
+}
+function catExamScoreKey(code, catObj, variantIdx) {
+  return 'cat:' + code + ':' + (catObj && catObj.id ? catObj.id : 'all') + ':v' + variantIdx;
+}
 
-  // 1. Sample up to 8 vocab items distributed evenly across topics
+function buildCategoryExamSteps(code, topics, opts = {}) {
+  const d = DATA[code];
+  const topicList = (topics || []).filter(Boolean);
+  const allWords = d ? d.topics.flatMap((x) => x.vocab || []) : [];
+  const levelPoolWords = topicList.flatMap((tp) => tp.vocab || []);
+  const distBase = levelPoolWords.length >= 12 ? levelPoolWords : allWords;
+  const variantIdx = opts.variantIdx != null ? opts.variantIdx : 0;
+  const totalVariants = Math.max(1, opts.totalVariants || 4);
+  const mode = opts.mode || 'balanced';
+  const isRandom = variantIdx < 0 || !!opts.remix;
+  const seedStr = (opts.seedKey || topicList.map((x) => x.id).join(',')) + ':v' + variantIdx + ':' + mode;
+  const rng = isRandom ? Math.random : makeExamRng(examHashSeed(seedStr));
+  const opt = (v, key) => {
+    const cleanVal = key === 'w' ? plain(v.w) : v[key];
+    let dist = sampleWith(distBase, 3, (x) => x.id === v.id || (key === 'w' ? plain(x.w) === cleanVal : x[key] === cleanVal), rng);
+    if (dist.length < 3 && allWords.length > distBase.length) {
+      dist = dist.concat(sampleWith(allWords, 3 - dist.length, (x) => x.id === v.id || dist.includes(x) || (key === 'w' ? plain(x.w) === cleanVal : x[key] === cleanVal), rng));
+    }
+    return shuffleWith([v, ...dist], rng);
+  };
+  const steps = [];
+  const usedWordIds = new Set();
+  const usedWordTexts = new Set();
+  const rotStart = variantIdx > 0 ? Math.floor((variantIdx * topicList.length) / totalVariants) : 0;
+  const rotatedTopics = topicList.length ? topicList.slice(rotStart).concat(topicList.slice(0, rotStart)) : [];
+  const orderedTopics = isRandom ? shuffleWith(topicList, rng) : shuffleWith(rotatedTopics, rng);
+  const usedTopicsInExam = new Set();
+  const priorUnseen = (list, getT = (x) => x) => [
+    ...list.filter((x) => !usedTopicsInExam.has(getT(x).id)),
+    ...list.filter((x) => usedTopicsInExam.has(getT(x).id))
+  ];
+
+  // 1. Sample vocab items distributed & partitioned across topics in the level
+  const vocabTarget = topicList.length >= 8 ? (mode === 'deep' ? 7 : 6) : Math.min(5, Math.max(3, topicList.length + 1));
   const pickedWords = [];
-  const usedIds = new Set();
-  for (const tp of shuffle(topics)) {
-    const cand = sample(tp.vocab || [], 1, (v) => usedIds.has(v.id))[0];
-    if (cand) { pickedWords.push(cand); usedIds.add(cand.id); }
-    if (pickedWords.length >= 8) break;
+  const pickFromSlice = (tp, pass) => {
+    const tv = tp.vocab || [];
+    if (!tv.length) return null;
+    const stepOff = variantIdx >= 0 && !isRandom ? Math.floor((Math.max(0, variantIdx) * tv.length) / totalVariants) : Math.floor(rng() * tv.length);
+    const limit = pass === 0 ? Math.max(2, Math.ceil(tv.length / totalVariants)) : tv.length;
+    const cands = [];
+    for (let k = 0; k < limit; k++) {
+      const cand = tv[(stepOff + k) % tv.length];
+      if (cand && !usedWordIds.has(cand.id) && !usedWordTexts.has(plain(cand.w))) cands.push(cand);
+    }
+    if (!cands.length) return null;
+    return cands[Math.floor(rng() * cands.length)];
+  };
+  for (let pass = 0; pass < 2 && pickedWords.length < vocabTarget; pass++) {
+    for (const tp of orderedTopics) {
+      const cand = pickFromSlice(tp, pass);
+      if (cand) {
+        pickedWords.push({ v: cand, topic: tp });
+        usedWordIds.add(cand.id);
+        usedWordTexts.add(plain(cand.w));
+        usedTopicsInExam.add(tp.id);
+      }
+      if (pickedWords.length >= vocabTarget) break;
+    }
   }
-  if (pickedWords.length < 8) {
-    const pool = topics.flatMap((tp) => tp.vocab || []);
-    pickedWords.push(...sample(pool, 8 - pickedWords.length, (v) => usedIds.has(v.id)));
+  if (pickedWords.length < vocabTarget) {
+    const extraPool = shuffleWith(topicList.flatMap((tp) => (tp.vocab || []).map((v) => ({ v, topic: tp }))), rng);
+    for (const item of extraPool) {
+      if (usedWordIds.has(item.v.id) || usedWordTexts.has(plain(item.v.w))) continue;
+      pickedWords.push(item);
+      usedWordIds.add(item.v.id);
+      usedWordTexts.add(plain(item.v.w));
+      usedTopicsInExam.add(item.topic.id);
+      if (pickedWords.length >= vocabTarget) break;
+    }
   }
-  pickedWords.forEach((v, idx) => {
-    const kinds = ['meaning', 'reverse', 'listen'];
-    const kind = kinds[idx % 3];
-    steps.push({ type: kind, v, opts: opt(v, kind === 'meaning' ? 'm' : 'w') });
+  const formatTemplates = {
+    balanced: ['meaning', 'gquiz', 'listen', 'reverse', 'meaning', 'gquiz', 'reverse'],
+    quiz: ['gquiz', 'reverse', 'gquiz', 'meaning', 'listen', 'reverse', 'gquiz'],
+    audio: ['listen', 'meaning', 'listen', 'gquiz', 'reverse', 'listen', 'meaning'],
+    deep: ['gquiz', 'reverse', 'listen', 'meaning', 'gquiz', 'listen', 'reverse']
+  };
+  const kindList = shuffleWith((formatTemplates[mode] || formatTemplates.balanced).slice(0, Math.max(pickedWords.length, 1)), rng);
+  pickedWords.forEach(({ v, topic }, idx) => {
+    const kind = kindList[idx % kindList.length] || 'meaning';
+    if (kind === 'gquiz' && code === 'en' && v.ex) {
+      const plainWord = plain(v.w);
+      const regexW = new RegExp('\\b' + plainWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+      if (regexW.test(v.ex)) {
+        const prompt = v.ex.replace(regexW, '＿＿＿＿＿＿');
+        const distPool = sampleWith(distBase, 3, (x) => x.id === v.id || !x.w || plain(x.w) === plainWord, rng).map((x) => plain(x.w));
+        if (distPool.length === 3) {
+          steps.push({
+            type: 'gquiz',
+            v,
+            topic,
+            q: {
+              type: 'cloze',
+              label: 'Điền từ đúng vào cấu trúc câu',
+              prompt,
+              hint: v.exm || v.m,
+              answer: plainWord,
+              opts: shuffleWith([plainWord, ...distPool], rng),
+              e: [v.ex, v.exr || '', v.exm || ''],
+              p: { g: { t: 'Từ vựng trong ngữ cảnh · ' + (topic.sub || topic.title), f: '', notes: [] } }
+            }
+          });
+          return;
+        }
+      }
+    }
+    const fallbackKind = kind === 'gquiz' ? (idx % 2 === 0 ? 'meaning' : 'reverse') : kind;
+    steps.push({ type: fallbackKind, v, topic, opts: opt(v, fallbackKind === 'meaning' ? 'm' : 'w') });
   });
 
-  // 2. Sample up to 2 listening dialogues (en)
+  // 2. Sample listening dialogue questions across ALL tracks & ALL questions (prefer unseen topics first)
   if (code === 'en') {
-    const tracks = shuffle(topics.flatMap((tp) => (Array.isArray(tp.listening) ? tp.listening : [])));
-    tracks.slice(0, 2).forEach((track) => {
-      const qs = Array.isArray(track.questions) ? track.questions : [];
-      const q = qs[0];
-      if (q) steps.push({ type: 'listen_dlg', track, q });
+    const dlgAll = [];
+    orderedTopics.forEach((tp) => {
+      (Array.isArray(tp.listening) ? tp.listening : []).forEach((track) => {
+        const qs = Array.isArray(track.questions) ? track.questions : [];
+        qs.forEach((q, qi) => {
+          if (q) dlgAll.push({ track, q, qi, topic: tp });
+        });
+      });
     });
+    if (dlgAll.length) {
+      const dlgTarget = mode === 'audio' ? 3 : 2;
+      const dOff = variantIdx >= 0 && !isRandom ? Math.floor((Math.max(0, variantIdx) * dlgAll.length) / totalVariants) : Math.floor(rng() * dlgAll.length);
+      const rotatedDlg = priorUnseen(dlgAll.slice(dOff).concat(dlgAll.slice(0, dOff)), (x) => x.topic);
+      const pickedDlg = [];
+      const usedTrackIds = new Set();
+      for (const item of rotatedDlg) {
+        const trKey = item.track.id || item.track.title;
+        if (usedTrackIds.has(trKey)) continue;
+        pickedDlg.push(item);
+        usedTrackIds.add(trKey);
+        usedTopicsInExam.add(item.topic.id);
+        if (pickedDlg.length >= dlgTarget) break;
+      }
+      if (pickedDlg.length < dlgTarget) {
+        for (const item of rotatedDlg) {
+          if (pickedDlg.includes(item)) continue;
+          pickedDlg.push(item);
+          usedTopicsInExam.add(item.topic.id);
+          if (pickedDlg.length >= dlgTarget) break;
+        }
+      }
+      pickedDlg.forEach((item) => steps.push({ type: 'listen_dlg', track: item.track, q: item.q, topic: item.topic }));
+    }
   }
 
-  // 3. Sample up to 5 topic quizzes distributed across topics
+  // 3. Sample situational & comprehension quizzes distributed across topics (prioritizing unseen topics)
+  const quizTarget = topicList.length >= 8 ? (mode === 'quiz' ? 6 : 5) : Math.min(4, Math.max(2, topicList.length));
   const pickedQuizzes = [];
   const usedQ = new Set();
-  for (const tp of shuffle(topics)) {
-    const q = sample(tp.quiz || [], 1, (x) => usedQ.has(x.id || x.q))[0];
-    if (q) { pickedQuizzes.push(q); usedQ.add(q.id || q.q); }
-    if (pickedQuizzes.length >= 5) break;
+  for (const tp of priorUnseen(orderedTopics)) {
+    const tq = tp.quiz || [];
+    if (!tq.length) continue;
+    const qStart = variantIdx >= 0 && !isRandom ? (Math.max(0, variantIdx) % tq.length) : Math.floor(rng() * tq.length);
+    let qPicked = null;
+    for (let k = 0; k < tq.length; k++) {
+      const q = tq[(qStart + k) % tq.length];
+      if (q && !usedQ.has(q.id || q.q)) { qPicked = q; break; }
+    }
+    if (qPicked) {
+      pickedQuizzes.push({ q: qPicked, topic: tp });
+      usedQ.add(qPicked.id || qPicked.q);
+      usedTopicsInExam.add(tp.id);
+    }
+    if (pickedQuizzes.length >= quizTarget) break;
   }
-  if (pickedQuizzes.length < 5) {
-    const qPool = topics.flatMap((tp) => tp.quiz || []);
-    pickedQuizzes.push(...sample(qPool, 5 - pickedQuizzes.length, (x) => usedQ.has(x.id || x.q)));
+  if (pickedQuizzes.length < quizTarget) {
+    const qPool = shuffleWith(topicList.flatMap((tp) => (tp.quiz || []).map((q) => ({ q, topic: tp }))), rng);
+    for (const item of qPool) {
+      if (usedQ.has(item.q.id || item.q.q)) continue;
+      pickedQuizzes.push(item);
+      usedQ.add(item.q.id || item.q.q);
+      usedTopicsInExam.add(item.topic.id);
+      if (pickedQuizzes.length >= quizTarget) break;
+    }
   }
-  pickedQuizzes.forEach((q) => steps.push({ type: 'quiz', q }));
+  pickedQuizzes.forEach((item) => steps.push({ type: 'quiz', q: item.q, topic: item.topic }));
 
-  // 4. Sample up to 2 grammar quizzes (zh/ja) or kanji (ja)
+  // 4. Grammar (zh/ja) or Kanji (ja) support preserved cleanly
   if ((code === 'zh' || code === 'ja') && d && d.grammar) {
-    const gids = [...new Set(topics.flatMap((tp) => tp.gram || []))];
-    sample(gids, Math.min(2, gids.length)).forEach((gid, idxG) => {
+    const gids = [...new Set(topicList.flatMap((tp) => tp.gram || []))];
+    sampleWith(gids, Math.min(2, gids.length), null, rng).forEach((gid, idxG) => {
       const qStep = makeGrammarQuizStep(code, gid, idxG % 2 === 0 ? ['mcq', 'cloze'] : ['cloze', 'mcq']);
       if (qStep) steps.push(qStep);
     });
   }
-  const kanjis = topics.flatMap((tp) => tp.kanji || []);
+  const kanjis = topicList.flatMap((tp) => tp.kanji || []);
   if (kanjis.length) {
     const allKanji = d ? d.topics.flatMap((x) => x.kanji || []) : kanjis;
-    sample(kanjis, Math.min(2, kanjis.length)).forEach((k) => {
-      steps.push({ type: 'kanji', k, opts: shuffle([k, ...sample(allKanji, 3, (x) => x.k === k.k)]) });
+    sampleWith(kanjis, Math.min(2, kanjis.length), null, rng).forEach((k) => {
+      steps.push({ type: 'kanji', k, opts: shuffleWith([k, ...sampleWith(allKanji, 3, (x) => x.k === k.k, rng)], rng) });
     });
   }
 
-  // 5. Sample up to 2 sentence ordering steps
-  const exWords = shuffle(pickedWords.filter((v) => v.ex && tokensOf(code, v.ex).length >= 3));
-  exWords.slice(0, 2).forEach((v) => {
-    steps.push({ type: 'order', text: v.ex, r: v.exr, trans: v.exm || ('Câu có từ “' + plain(v.w) + '” (' + v.m + ')'), tokens: tokensOf(code, v.ex), v });
+  // 5. Sample sentence ordering across ALL level words (preferring unseen topics & unused words)
+  const orderTarget = topicList.length >= 8 ? 3 : 2;
+  const pickedOrders = [];
+  const pickOrderWord = (tp, allowUsed) => {
+    const cands = (tp.vocab || []).filter((v) => v.ex && tokensOf(code, v.ex).length >= 3 && (allowUsed || (!usedWordIds.has(v.id) && !usedWordTexts.has(plain(v.w)))));
+    if (!cands.length) return null;
+    const off = variantIdx >= 0 && !isRandom ? Math.floor((Math.max(0, variantIdx) * cands.length) / totalVariants) : Math.floor(rng() * cands.length);
+    return cands[off % cands.length];
+  };
+  for (let pass = 0; pass < 2 && pickedOrders.length < orderTarget; pass++) {
+    for (const tp of priorUnseen(shuffleWith(orderedTopics, rng))) {
+      const v = pickOrderWord(tp, pass > 0);
+      if (v && !pickedOrders.some((x) => x.v.id === v.id)) {
+        pickedOrders.push({ v, topic: tp });
+        usedWordIds.add(v.id);
+        usedWordTexts.add(plain(v.w));
+        usedTopicsInExam.add(tp.id);
+      }
+      if (pickedOrders.length >= orderTarget) break;
+    }
+  }
+  pickedOrders.forEach(({ v, topic }) => {
+    steps.push({ type: 'order', text: v.ex, r: v.exr, trans: v.exm || ('Câu có từ “' + plain(v.w) + '” (' + v.m + ')'), tokens: tokensOf(code, v.ex), v, topic });
   });
 
-  return steps;
+  // 6. Include 1 remixed Email / Dialogue 2-part fill exercise rotated across unseen topics
+  const fillPool = [];
+  orderedTopics.forEach((tp) => {
+    topicFillsList(tp).forEach((fill) => fillPool.push({ fill, topic: tp }));
+  });
+  if (fillPool.length) {
+    const rotatedFills = priorUnseen(fillPool, (x) => x.topic);
+    const fIdx = variantIdx >= 0 && !isRandom ? ((Math.max(0, variantIdx) * 3) % rotatedFills.length) : Math.floor(rng() * rotatedFills.length);
+    const chosenFill = rotatedFills[fIdx];
+    if (chosenFill) steps.push({ type: 'fill', fill: chosenFill.fill, topic: chosenFill.topic });
+  }
+
+  return interleaveExamSteps(steps, rng);
 }
 
-function startCategoryExam(code, catObj, topics) {
-  const steps = buildCategoryExamSteps(code, topics);
+function openCategoryExamSelector(code, catObj, topics) {
+  VIEW = 'home';
+  setTabs(false);
+  const catalog = getCategoryExamCatalog(catObj, topics);
+  const doneTopics = topics.filter((t) => topicDone(t)).length;
+  const lvLabel = catObj.level || catObj.short || catObj.name;
+  const scoreMap = S.catExams || {};
+
+  const wrap = h('div', { class: 'stack-lg', style: { gap: '12px' } },
+    h('div', { class: 'topbar' },
+      h('button', { class: 'ghost', onclick: () => go('home') }, '← Quay lại'),
+      h('span', { class: 'muted small grow' }, 'Kiểm tra vượt cấp · ' + lvLabel),
+      feedbackBtn({ mode: 'lesson', topicId: 'cat-' + catObj.id, topicTitle: 'Bộ đề vượt cấp ' + lvLabel })
+    ),
+    h('div', { class: 'panel stack', style: { gap: '8px', background: 'rgba(180,83,9,.06)', border: '1.5px solid rgba(180,83,9,.3)' } },
+      h('div', { class: 'row between', style: { alignItems: 'center', flexWrap: 'wrap', gap: '8px' } },
+        h('div', { style: { flex: '1 1 210px', minWidth: 0 } },
+          h('h1', { style: { fontSize: '1.22rem', margin: 0 } }, '🚀 Bộ Đề Vượt Cấp · ' + lvLabel),
+          h('p', { class: 'small muted', style: { margin: '3px 0 0 0' } }, catObj.name + ' · ' + doneTopics + '/' + topics.length + ' bài đã học')
+        ),
+        h('span', { class: lvChipClass(catObj.level || catObj.short) }, catObj.level || catObj.short)
+      ),
+      h('p', { class: 'small', style: { margin: 0, lineHeight: 1.45 } },
+        'Mỗi đề tự động xào chẻ câu hỏi từ vựng, nghe hội thoại, tình huống, điền cấu trúc câu và viết từ toàn bộ ' + topics.length + ' bài học trong cấp này. Đạt ≥ 80% ở bất kỳ đề nào để pass 100%.'
+      ),
+      h('button', {
+        type: 'button',
+        class: 'primary block',
+        style: { marginTop: '2px' },
+        onclick: () => startCategoryExam(code, catObj, topics, {
+          directStart: true,
+          remix: true,
+          variantMeta: {
+            variantIdx: -1,
+            totalVariants: catalog.length,
+            icon: '🎲',
+            mode: 'balanced',
+            name: 'Đề xáo trộn ngẫu nhiên toàn cấp',
+            subtitle: 'Xào chẻ mới ngẫu nhiên trên toàn bộ bài học'
+          }
+        })
+      }, '🎲 Thi ngay · Tạo Đề Xáo Trộn Ngẫu Nhiên')
+    ),
+    h('div', { class: 'acc-toolbar' },
+      h('span', { class: 'small muted', style: { fontWeight: 600 } }, '📚 ' + catalog.length + ' bộ đề cố định theo chuyên đề (ít trùng lặp)'),
+      makeToggleAllBtn(() => wrap, 'details.cat-exam-acc')
+    ),
+    ...catalog.map((v, idx) => {
+      const previewSteps = buildCategoryExamSteps(code, topics, v);
+      const sum = summarizeExamSteps(previewSteps);
+      const sk = catExamScoreKey(code, catObj, v.variantIdx);
+      const rec = scoreMap[sk];
+      const skillChips = [
+        sum.bySkill.vocab ? h('span', { class: 'chip', style: { fontSize: '.74rem' } }, '📚 ' + sum.bySkill.vocab + ' Từ vựng') : null,
+        sum.bySkill.listen ? h('span', { class: 'chip', style: { fontSize: '.74rem' } }, '🎧 ' + sum.bySkill.listen + ' Nghe') : null,
+        sum.bySkill.quiz ? h('span', { class: 'chip', style: { fontSize: '.74rem' } }, '📖 ' + sum.bySkill.quiz + ' Tình huống') : null,
+        sum.bySkill.cloze ? h('span', { class: 'chip', style: { fontSize: '.74rem' } }, '🧩 ' + sum.bySkill.cloze + ' Điền câu') : null,
+        sum.bySkill.order ? h('span', { class: 'chip', style: { fontSize: '.74rem' } }, '✍️ ' + sum.bySkill.order + ' Sắp xếp câu') : null,
+        sum.bySkill.fill ? h('span', { class: 'chip', style: { fontSize: '.74rem' } }, '✉️ ' + sum.bySkill.fill + ' Điền Email') : null
+      ].filter(Boolean);
+      const previewTopics = sum.topicTitles.slice(0, 4).join(', ') + (sum.usedTopicsCount > 4 ? '… (+' + (sum.usedTopicsCount - 4) + ' bài)' : '');
+
+      return accordionItem({
+        cls: 'acc-card cat-exam-acc',
+        iconEl: v.icon,
+        title: v.name,
+        subtitle: `${sum.count} câu xào chẻ từ ${sum.usedTopicsCount}/${topics.length} chủ đề · ${v.subtitle}`,
+        defaultOpen: idx === 0,
+        chips: [
+          rec && rec.best != null
+            ? h('span', { class: 'chip ' + (rec.best >= 80 ? 'good' : ''), style: { fontSize: '.74rem', fontWeight: 700 } }, (rec.best >= 80 ? '🏆 ' : 'Đã thử ') + rec.best + '%')
+            : h('span', { class: 'chip', style: { fontSize: '.74rem', fontWeight: 700 } }, sum.count + ' câu')
+        ],
+        body: [
+          h('div', { class: 'row wrap', style: { gap: '6px' } }, ...skillChips),
+          h('p', { class: 'small muted', style: { margin: 0, fontSize: '.8rem', lineHeight: 1.4 } }, '📌 Bài học được xào chẻ: ' + previewTopics),
+          rec && rec.tries ? h('p', { class: 'small muted', style: { margin: 0, fontSize: '.78rem' } }, `Đã làm ${rec.tries} lần · Điểm cao nhất: ${rec.best}%`) : null,
+          h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '2px' } },
+            h('button', {
+              type: 'button',
+              class: 'primary',
+              style: { flex: '1 1 170px' },
+              onclick: () => startCategoryExam(code, catObj, topics, { directStart: true, variantMeta: v })
+            }, '▶ Thi ' + (v.name.split('·')[0] || 'đề này').trim()),
+            h('button', {
+              type: 'button',
+              class: 'ghost',
+              style: { flex: '1 1 160px', border: '1.5px solid var(--line)' },
+              onclick: () => startCategoryExam(code, catObj, topics, { directStart: true, variantMeta: v, remix: true })
+            }, '🔀 Xáo trộn & Thi')
+          )
+        ]
+      });
+    })
+  );
+  mount(wrap);
+}
+
+function startCategoryExam(code, catObj, topics, examOpts = null) {
+  if (!examOpts || !examOpts.directStart) {
+    openCategoryExamSelector(code, catObj, topics);
+    return;
+  }
+  const variantMeta = examOpts.variantMeta || getCategoryExamCatalog(catObj, topics)[0];
+  const remix = !!examOpts.remix;
+  const steps = buildCategoryExamSteps(code, topics, Object.assign({}, variantMeta, { remix }));
+  const isRandom = variantMeta.variantIdx < 0 || remix;
   const synthTopic = {
-    id: 'cat-' + catObj.id,
+    id: 'cat-' + catObj.id + (variantMeta.variantIdx >= 0 ? '-v' + variantMeta.variantIdx : '-rand'),
     lang: code,
     title: 'Kiểm tra vượt cấp · ' + (catObj.level || catObj.short),
-    sub: catObj.name,
+    sub: (variantMeta.name ? variantMeta.name + ' · ' : '') + catObj.name,
     vocab: topics.flatMap((x) => x.vocab || []).slice(0, 12),
     lessons: [{ kind: 'cat_exam', words: [] }]
   };
-  lessonView(synthTopic, 0, { catExam: { catObj, topics, steps } });
+  lessonView(synthTopic, 0, { catExam: { code, catObj, topics, steps, variantMeta, remix: isRandom } });
 }
 
 function lessonView(t, i, opts = null) {
@@ -15101,7 +15506,10 @@ function lessonView(t, i, opts = null) {
   setFeedbackContext({ mode: 'lesson', topicId: t.id, topicTitle: t.sub || t.title, lessonIndex: i, lessonKind: t.lessons[i].kind, lessonTitle: lessonTitle(t, i) });
   const code = t.lang || S.lang || 'en', steps = catExam ? catExam.steps : buildSteps(t, i), first = new Map(), retried = new Set(), queue = steps.map((s, n) => Object.assign({}, s, { n }));
   let done = 0, showTheory = false;
-  if (catExam) catExam.topics.slice(0, 6).forEach((subT) => preloadTopicAudio(code, subT));
+  if (catExam) {
+    const usedTopics = [...new Set(steps.map((s) => s && s.topic).filter(Boolean))];
+    (usedTopics.length ? usedTopics : catExam.topics.slice(0, 6)).forEach((subT) => preloadTopicAudio(code, subT));
+  }
   else preloadTopicAudio(code, t);
   if (t.gram && t.gram.length && DATA[code] && DATA[code].grammar) preloadGrammarAudio(code, t.gram.map((gid) => DATA[code].grammar[gid]).filter(Boolean));
   const exit = () => { stopSay(); setFeedbackContext(null); go('home'); };
@@ -15191,7 +15599,7 @@ function lessonView(t, i, opts = null) {
           }
         });
       };
-      const dlg = resolveQuizDialogue(t, ex.q);
+      const dlg = resolveQuizDialogue(ex.topic || t, ex.q);
       body = h('div', { class: 'stack' },
         h('p', { class: 'label' }, dlg ? '📖 Đọc hiểu hội thoại · Chọn đáp án đúng' : '📖 Kỹ năng Đọc hiểu · Tình huống thực tế'),
         dlg ? renderDialogueCard(code, dlg.title, dlg.src, dlg.lines, { defaultShowPy: true, defaultShowVi: false, compact: true }) : null,
@@ -15459,17 +15867,21 @@ function lessonView(t, i, opts = null) {
         if (ex.type === 'speak' && resp) srsRate(code + ':speak:' + plain(ex.text), resp.score >= 70);
         if (ex.type === 'write') srsRate(code + ':write:' + ex.ch, r.correct);
         if (ex.type === 'gquiz') {
-          srsRate(code + ':gram:' + ex.q.p.gid, r.correct);
-          const st = gqStore();
-          if (r.correct) {
-            if (st.wrong[ex.q.p.gid]) {
-              st.wrong[ex.q.p.gid]--;
-              if (st.wrong[ex.q.p.gid] <= 0) delete st.wrong[ex.q.p.gid];
+          if (ex.q && ex.q.p && ex.q.p.gid) {
+            srsRate(code + ':gram:' + ex.q.p.gid, r.correct);
+            const st = gqStore();
+            if (r.correct) {
+              if (st.wrong[ex.q.p.gid]) {
+                st.wrong[ex.q.p.gid]--;
+                if (st.wrong[ex.q.p.gid] <= 0) delete st.wrong[ex.q.p.gid];
+              }
+            } else {
+              st.wrong[ex.q.p.gid] = (st.wrong[ex.q.p.gid] || 0) + 1;
             }
-          } else {
-            st.wrong[ex.q.p.gid] = (st.wrong[ex.q.p.gid] || 0) + 1;
+            save();
+          } else if (ex.v && ex.v.id) {
+            srsRate(sid(code, ex.v.id), r.correct);
           }
-          save();
         }
       }
       if (!r.correct && !retried.has(ex.n) && ex.type !== 'write') { retried.add(ex.n); queue.push(ex); }
@@ -15494,9 +15906,10 @@ function lessonView(t, i, opts = null) {
             ex.v.exm ? h('span', { class: 'muted' }, ' — ' + ex.v.exm) : null
           ) : null,
           h('div', { class: 'listen', style: { justifyContent: 'flex-start' } }, listenBtns(code, ex.v.w))
-        ) : null
+        ) : null,
+        catExam && ex.topic ? h('p', { class: 'small muted', style: { margin: '6px 0 0 0', fontSize: '.76rem' } }, '📌 Nguồn bài học: ' + (ex.topic.sub || ex.topic.title)) : null
       ),
-      ex.type === 'fill' ? fillReveal(code, ex.fill, (ex.fill.src && !ex.fill.audio) ? null : t.id) : '');
+      ex.type === 'fill' ? fillReveal(code, ex.fill, (ex.fill.src && !ex.fill.audio) ? null : (ex.topic ? ex.topic.id : t.id)) : '');
       if (ex.type === 'order') sayAfter(code, ex.text, 250);
       if (ex.type === 'quiz' && (code === 'en' || ((code === 'zh' || code === 'ja') && /[\u4e00-\u9fff\u3040-\u30ff]/.test(((ex.q.o || ex.q.opts || [])[ex.q.a]) || '')))) { const optTarget = (ex.q.o || ex.q.opts || [])[ex.q.a]; if (optTarget) sayAfter(code, optTarget, 250); }
       if (ex.type === 'gquiz' && ex.q && ex.q.e && ex.q.e[0]) sayAfter(code, ex.q.e[0], 250);
@@ -15607,6 +16020,12 @@ function lessonView(t, i, opts = null) {
     } else if (!catExam) {
       S.lessons[k] = Math.max(pct, typeof S.lessons[k] === 'number' ? S.lessons[k] : 0);
     }
+    if (catExam && catExam.variantMeta && catExam.variantMeta.variantIdx >= 0) {
+      if (!S.catExams) S.catExams = {};
+      const sk = catExamScoreKey(code, catExam.catObj, catExam.variantMeta.variantIdx);
+      const prevEx = S.catExams[sk] || {};
+      S.catExams[sk] = { best: Math.max(pct, prevEx.best || 0), tries: (prevEx.tries || 0) + 1, last: todayN() };
+    }
     addXp(xp, code); checkAch();
     const nx = nextLesson(DATA[code]);
     setFeedbackContext(null);
@@ -15644,7 +16063,29 @@ function lessonView(t, i, opts = null) {
         h('p', { class: 'small muted', style: { margin: '4px 0 0 0' } }, 'Bạn có thể làm lại bài Ôn tập cả chủ đề này hoặc học từng bài nhỏ bên dưới.')
       ),
       h('p', {}, 'Hôm nay ' + LANGS[code].short + ': ' + xpOf(todayN(), code) + '/' + goal() + ' XP · chuỗi ' + streak(code) + ' ngày'),
-      catExam && !passedCatExam && h('button', { class: 'primary block', onclick: () => startCategoryExam(code, catExam.catObj, catExam.topics) }, '🔄 Thi lại vượt cấp chuyên đề'),
+      catExam && (() => {
+        const list = getCategoryExamCatalog(catExam.catObj, catExam.topics);
+        const curIdx = catExam.variantMeta && catExam.variantMeta.variantIdx >= 0 ? catExam.variantMeta.variantIdx : 0;
+        const nextVar = list[(curIdx + 1) % list.length];
+        return h('div', { class: 'stack', style: { width: '100%', gap: '8px' } },
+          h('button', {
+            type: 'button',
+            class: (!passedCatExam ? 'primary ' : '') + 'block',
+            onclick: () => startCategoryExam(code, catExam.catObj, catExam.topics, { directStart: true, variantMeta: catExam.variantMeta, remix: true })
+          }, '🔀 Xáo trộn & Thi lại đề này'),
+          h('button', {
+            type: 'button',
+            class: 'accent block',
+            onclick: () => startCategoryExam(code, catExam.catObj, catExam.topics, { directStart: true, variantMeta: nextVar })
+          }, '🎲 Làm đề vượt cấp khác (' + (nextVar.name.split('·')[0] || 'Đề mới').trim() + ')'),
+          h('button', {
+            type: 'button',
+            class: 'ghost block',
+            style: { border: '1.5px solid var(--line)' },
+            onclick: () => openCategoryExamSelector(code, catExam.catObj, catExam.topics)
+          }, '📋 Chọn trong bộ đề vượt cấp')
+        );
+      })(),
       nx && h('button', { class: (catExam && !passedCatExam ? '' : 'primary ') + 'block', onclick: () => lessonView(nx.t, nx.i) }, 'Học bài tiếp theo'),
       h('button', { class: 'block', onclick: () => go('home') }, 'Về trang Học'),
       repeat && !catExam && h('button', {
@@ -15666,13 +16107,29 @@ function lessonView(t, i, opts = null) {
   mount(h('div', { class: 'stack-lg' },
     h('div', { class: 'topbar' }, h('button', { class: 'ghost', onclick: exit }, 'Thoát'), h('span', { class: 'muted small grow' }, t.sub || t.title), feedbackBtn()),
     h('h1', { lang: t.lessons[i].kind === 'learn' ? LANGS[code].lang : null }, lessonTitle(t, i)),
-    catExam && h('div', {
-      class: 'panel',
-      style: { padding: '10px 14px', background: 'rgba(180,83,9,.08)', border: '1px solid rgba(180,83,9,.3)', borderRadius: '12px' }
-    },
-      h('strong', { style: { color: 'var(--amber)', fontSize: '.9rem' } }, '🚀 Kiểm tra vượt cấp chuyên đề ' + (catExam.catObj.level || catExam.catObj.short) + ' · ' + catExam.catObj.name),
-      h('p', { class: 'small', style: { margin: '3px 0 0 0' } }, 'Bài tổng hợp từ vựng, nghe hiểu và tình huống trên toàn bộ ' + catExam.topics.length + ' chủ đề. Đạt từ 80% trở lên sẽ pass 100% cả chuyên đề này.')
-    ),
+    catExam && (() => {
+      const sum = summarizeExamSteps(steps);
+      const chips = [
+        sum.bySkill.vocab ? h('span', { class: 'chip', style: { fontSize: '.74rem' } }, '📚 ' + sum.bySkill.vocab + ' Từ vựng') : null,
+        sum.bySkill.listen ? h('span', { class: 'chip', style: { fontSize: '.74rem' } }, '🎧 ' + sum.bySkill.listen + ' Nghe') : null,
+        sum.bySkill.quiz ? h('span', { class: 'chip', style: { fontSize: '.74rem' } }, '📖 ' + sum.bySkill.quiz + ' Tình huống') : null,
+        sum.bySkill.cloze ? h('span', { class: 'chip', style: { fontSize: '.74rem' } }, '🧩 ' + sum.bySkill.cloze + ' Điền câu') : null,
+        sum.bySkill.order ? h('span', { class: 'chip', style: { fontSize: '.74rem' } }, '✍️ ' + sum.bySkill.order + ' Sắp xếp câu') : null,
+        sum.bySkill.fill ? h('span', { class: 'chip', style: { fontSize: '.74rem' } }, '✉️ ' + sum.bySkill.fill + ' Điền Email') : null
+      ].filter(Boolean);
+      const exTitle = catExam.variantMeta ? catExam.variantMeta.name : ('Kiểm tra vượt cấp ' + (catExam.catObj.level || catExam.catObj.short));
+      return h('div', {
+        class: 'panel stack',
+        style: { gap: '8px', padding: '12px 14px', background: 'rgba(180,83,9,.08)', border: '1px solid rgba(180,83,9,.3)', borderRadius: '12px' }
+      },
+        h('div', { class: 'row between', style: { alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
+          h('strong', { style: { color: 'var(--amber)', fontSize: '.92rem' } }, '🚀 ' + exTitle + (catExam.remix ? ' · Đã xáo trộn' : '')),
+          h('span', { class: 'chip', style: { fontSize: '.72rem', fontWeight: 700 } }, sum.usedTopicsCount + '/' + catExam.topics.length + ' chủ đề')
+        ),
+        h('p', { class: 'small', style: { margin: 0 } }, 'Xào chẻ câu hỏi tổng hợp Từ vựng, Nghe hiểu, Tình huống, Ngữ cảnh & Viết trong ' + catExam.catObj.name + '. Đạt từ 80% trở lên sẽ pass 100% cấp này.'),
+        h('div', { class: 'row wrap', style: { gap: '6px' } }, ...chips)
+      );
+    })(),
     isShortcutEligible && h('div', {
       class: 'panel',
       style: { padding: '10px 14px', background: 'rgba(180,83,9,.08)', border: '1px solid rgba(180,83,9,.3)', borderRadius: '12px' }
@@ -15723,6 +16180,18 @@ function lessonView(t, i, opts = null) {
         h('span', { class: 'spk', 'aria-hidden': 'true' }, icon(ICON.speaker))))),
     h('div', { class: 'dock stack', style: { gap: '8px' } },
       h('button', { class: 'primary block', onclick: step }, isDone ? ('Học lại bài này · ' + steps.filter((s) => s.type !== 'intro').length + ' câu') : ('Bắt đầu · ' + steps.filter((s) => s.type !== 'intro').length + ' câu')),
+      catExam && h('button', {
+        type: 'button',
+        class: 'accent block',
+        style: { fontWeight: 700, padding: '11px 14px' },
+        onclick: () => startCategoryExam(code, catExam.catObj, catExam.topics, { directStart: true, variantMeta: catExam.variantMeta, remix: true })
+      }, '🔀 Xáo trộn lại đề & xào chẻ câu mới'),
+      catExam && h('button', {
+        type: 'button',
+        class: 'ghost block',
+        style: { border: '1.5px solid var(--line)' },
+        onclick: () => openCategoryExamSelector(code, catExam.catObj, catExam.topics)
+      }, '📋 Chọn bộ đề vượt cấp khác'),
       (t.lessons[i].words && t.lessons[i].words.length > 0) && h('button', {
         type: 'button',
         class: 'accent block',
