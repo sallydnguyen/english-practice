@@ -222,11 +222,31 @@ details.duo-unit[open] > summary .acc-arrow { transform: rotate(180deg); }
 .duo-label { margin-top: 8px; max-width: 175px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .duo-label b { font-size: .84rem; line-height: 1.25; color: var(--ink); }
 .duo-label span { font-size: .74rem; color: var(--muted); line-height: 1.25; }
+.duo-float-tip { cursor: pointer; }
 .duo-popover {
-  width: 100%; max-width: 440px; margin-top: 12px; padding: 14px; border-radius: 16px;
-  background: var(--sunk); border: 2px solid var(--teal); box-shadow: 0 10px 24px rgba(0,0,0,.1);
-  display: flex; flex-direction: column; gap: 8px; animation: fadeInDown .16s ease;
+  position: relative; width: 100%; max-width: 440px; margin-top: 16px; padding: 14px; border-radius: 18px;
+  background: var(--surface); border: 2px solid var(--bubble-col, var(--teal));
+  box-shadow: 0 12px 28px rgba(0,0,0,.14);
+  display: flex; flex-direction: column; gap: 10px; animation: fadeInDown .16s ease;
 }
+.duo-popover::before, .duo-popover::after {
+  content: ''; position: absolute; left: clamp(28px, calc(50% + var(--duo-x, 0px)), calc(100% - 28px));
+  transform: translateX(-50%) rotate(45deg); pointer-events: none;
+}
+.duo-popover::before {
+  top: -10px; width: 18px; height: 18px; background: var(--surface);
+  border-top: 2px solid var(--bubble-col, var(--teal)); border-left: 2px solid var(--bubble-col, var(--teal));
+}
+.duo-popover::after {
+  top: -7px; width: 16px; height: 16px; background: var(--surface);
+}
+.duo-cta-btn {
+  width: 100%; border: none; border-radius: 14px; min-height: 46px; padding: 10px 14px;
+  font-weight: 800; font-size: .94rem; letter-spacing: .02em; color: #fff;
+  background: var(--bubble-col, var(--teal));
+  box-shadow: 0 4px 0 rgba(0,0,0,.22); transition: transform .1s ease, box-shadow .1s ease;
+}
+.duo-cta-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,.22); }
 .extras { display: flex; gap: 8px; flex-wrap: wrap; }
 .chip { display: inline-block; font-size: .75rem; padding: 2px 8px; border-radius: 99px; background: var(--sunk); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .chip.good { background: var(--good-bg); color: var(--good); }
@@ -1354,7 +1374,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/en.json và data/ielts_30day_listening.js,
    âm thanh thu sẵn nằm trong audio/ (audio/w*.json, audio/mail/, audio/listen/, audio/ielts/).
    ===================================================================== */
-const APP_BUILD_ID = '20261126-0530';
+const APP_BUILD_ID = '20261126-0600';
 const LANGS = {
   en: { label: 'English', vi: 'Tiếng Anh', short: 'Anh', folder: '', tts: 'en-US', rec: 'en-US', lang: 'en', cjk: false },
 };
@@ -13508,7 +13528,15 @@ function topicCard(t, nx, num, idxInPhase = 0) {
   const ringCol = isDone ? '#f59e0b' : (isCur ? '#58cc02' : 'var(--teal)');
   const nodeGlyph = isDone ? '👑' : (isCur ? '★' : String(displayNum));
 
-  const popover = open ? h('div', { class: 'duo-popover' },
+  const nextLessonIdx = isCur && nx ? nx.i : Math.max(0, t.lessons.findIndex((_, i) => !lessonDone(t, i)));
+  const ctaLabel = isDone
+    ? '↺ ÔN LẠI CHỦ ĐỀ'
+    : (done > 0 ? `▶ HỌC TIẾP: ${lessonTitle(t, nextLessonIdx).toUpperCase()}` : `▶ BẮT ĐẦU: ${lessonTitle(t, 0).toUpperCase()}`);
+
+  const popover = open ? h('div', {
+    class: 'duo-popover',
+    style: { '--duo-x': shiftX + 'px', '--bubble-col': ringCol }
+  },
     h('div', { class: 'row between', style: { alignItems: 'flex-start', gap: '8px' } },
       h('div', { class: 'stack', style: { gap: '2px', minWidth: 0, flex: 1 } },
         h('b', { lang: L().lang, style: { fontSize: '.98rem' } }, `${displayNum}. ${t.title}`),
@@ -13520,6 +13548,11 @@ function topicCard(t, nx, num, idxInPhase = 0) {
         h('button', { class: 'ghost mini', style: { minHeight: '28px', padding: '2px 8px' }, onclick: () => { openTopics.delete(ok); homeView(); } }, '✕')
       )
     ),
+    h('button', {
+      type: 'button',
+      class: 'duo-cta-btn',
+      onclick: () => lessonView(t, isDone ? 0 : nextLessonIdx)
+    }, ctaLabel),
     (hasGram || hasQuickQuiz) && h('div', { class: 'extras', style: { gap: '6px', marginBottom: '2px' } },
       hasGram && h('button', {
         class: 'ghost mini',
@@ -13603,7 +13636,11 @@ function topicCard(t, nx, num, idxInPhase = 0) {
 
   return h('section', { class: 'duo-step' },
     h('div', { class: 'duo-node-anchor', style: { '--duo-x': shiftX + 'px' } },
-      isCur ? h('div', { class: 'duo-float-tip' }, done > 0 ? 'HỌC TIẾP' : 'BẮT ĐẦU') : null,
+      isCur ? h('button', {
+        type: 'button',
+        class: 'duo-float-tip',
+        onclick: () => lessonView(nx.t, nx.i)
+      }, done > 0 ? 'HỌC TIẾP' : 'BẮT ĐẦU') : null,
       h('div', {
         class: 'duo-ring',
         style: { '--pct': pct, '--ring-col': ringCol }

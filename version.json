@@ -1,5 +1,5 @@
 {
-  "version": "4.05",
-  "build": "20261126-0530",
-  "message": "Thiết kế lại lộ trình bài học Trang chủ theo phong cách Duolingo trực quan"
+  "version": "4.06",
+  "build": "20261126-0600",
+  "message": "Nâng cấp bong bóng gợi ý & chi tiết bài học (Speech-Bubble Popover) chuẩn Duolingo"
 }
