@@ -1422,7 +1422,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/en.json và data/ielts_30day_listening.js,
    âm thanh thu sẵn nằm trong audio/ (audio/w*.json, audio/mail/, audio/listen/, audio/ielts/).
    ===================================================================== */
-const APP_BUILD_ID = '20261126-0900';
+const APP_BUILD_ID = '20261126-0915';
 const LANGS = {
   en: { label: 'English', vi: 'Tiếng Anh', short: 'Anh', folder: '', tts: 'en-US', rec: 'en-US', lang: 'en', cjk: false },
 };
@@ -8041,7 +8041,7 @@ function homeView(opts = {}) {
                 name: u.name
               }, u.topics);
             }
-          }, '🚀 Vượt cấp độ'),
+          }, 'Test'),
           h('span', { class: 'acc-arrow', 'aria-hidden': 'true' }, '▾')
         ),
         h('div', { class: 'duo-path' },
@@ -8154,7 +8154,7 @@ function homeView(opts = {}) {
     topicsNode,
     catExamCard,
     metaFooterCard,
-    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.12 · Section (Cấp độ) & Unit')));
+    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.13 · Section (Cấp độ) & Unit')));
   if (_keepY != null) window.scrollTo(0, _keepY);
 }
 
