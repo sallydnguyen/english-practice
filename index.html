@@ -1422,7 +1422,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/en.json và data/ielts_30day_listening.js,
    âm thanh thu sẵn nằm trong audio/ (audio/w*.json, audio/mail/, audio/listen/, audio/ielts/).
    ===================================================================== */
-const APP_BUILD_ID = '20261126-0800';
+const APP_BUILD_ID = '20261126-0830';
 const LANGS = {
   en: { label: 'English', vi: 'Tiếng Anh', short: 'Anh', folder: '', tts: 'en-US', rec: 'en-US', lang: 'en', cjk: false },
 };
@@ -3643,7 +3643,7 @@ function setTabs(show) {
     const isCur = (VIEW === k) ||
       (k === 'home' && (VIEW === 'home' || VIEW === 'pick')) ||
       (k === 'review' && (VIEW === 'review' || VIEW === 'dict')) ||
-      (k === 'practice' && (VIEW === 'practice' || VIEW === 'dictation' || VIEW === 'games' || VIEW === 'news' || VIEW === 'knowledge' || VIEW === 'grammar' || VIEW === 'kanji' || VIEW === 'skills' || VIEW === 'speak' || VIEW === 'write')) ||
+      (k === 'practice' && (VIEW === 'practice' || VIEW === 'crash30' || VIEW === 'dictation' || VIEW === 'games' || VIEW === 'news' || VIEW === 'knowledge' || VIEW === 'grammar' || VIEW === 'kanji' || VIEW === 'skills' || VIEW === 'speak' || VIEW === 'write')) ||
       (k === 'exam' && (VIEW === 'exam' || VIEW === 'ielts'));
     return h('button', {
       'aria-current': isCur ? 'page' : null,
@@ -3679,6 +3679,7 @@ async function route() {
       home: homeView,
       dictation: dictationTabView,
       practice: practiceTabView,
+      crash30: crash30TabView,
       games: gamesTabView,
       news: newsView,
       review: reviewView,
@@ -5259,7 +5260,7 @@ function crash30NextDay(c30) {
   return 1;
 }
 
-function crash30HomeSection(d) {
+function crash30HomeSection(d, onRefresh = () => crash30TabView(), opts = {}) {
   const c30 = d && d.crash30;
   if (!c30 || !c30.days || !c30.days.length) return null;
   const prog = S.en_crash30 || {};
@@ -5267,6 +5268,7 @@ function crash30HomeSection(d) {
   const totalN = c30.days.length;
   const pct = Math.round((doneN / totalN) * 100);
   const nextN = crash30NextDay(c30);
+  const isExpanded = !!(opts.alwaysOpen || CRASH30_OPEN);
 
   const stageNodes = (c30.stages || []).map((st) => {
     const stDays = c30.days.filter((x) => x.stage === st.id);
@@ -5280,7 +5282,7 @@ function crash30HomeSection(d) {
         onclick: () => {
           if (CRASH30_STAGE_OPEN.has(st.id)) CRASH30_STAGE_OPEN.delete(st.id);
           else CRASH30_STAGE_OPEN.add(st.id);
-          homeView();
+          onRefresh();
         }
       },
         h('div', { class: 'stack', style: { gap: '2px', minWidth: 0 } },
@@ -5325,12 +5327,12 @@ function crash30HomeSection(d) {
         ),
         h('p', { class: 'small muted', style: { margin: 0 } }, '4 chặng · Hội thoại, mẫu câu, đóng vai & phản xạ tức thì (' + doneN + '/' + totalN + ' ngày · ' + pct + '%)')
       ),
-      h('button', {
+      !opts.alwaysOpen ? h('button', {
         type: 'button',
         class: 'ghost mini',
-        'aria-expanded': String(CRASH30_OPEN),
-        onclick: () => { CRASH30_OPEN = !CRASH30_OPEN; homeView(); }
-      }, CRASH30_OPEN ? 'Thu gọn ▴' : 'Danh mục 30 ngày ▾')
+        'aria-expanded': String(isExpanded),
+        onclick: () => { CRASH30_OPEN = !CRASH30_OPEN; onRefresh(); }
+      }, isExpanded ? 'Thu gọn ▴' : 'Danh mục 30 ngày ▾') : null
     ),
     h('div', { class: 'c30-bar', role: 'progressbar', 'aria-valuenow': doneN, 'aria-valuemax': totalN },
       h('i', { style: { width: pct + '%' } })
@@ -5342,14 +5344,28 @@ function crash30HomeSection(d) {
         style: { flex: '1 1 180px' },
         onclick: () => { CRASH30_TAB = 'dialogue'; crash30DayView(nextN); }
       }, doneN >= totalN ? '🔄 Ôn lại Ngày 1' : ('▶ Học Ngày ' + nextN + ': ' + ((c30.days.find((x) => x.n === nextN) || {}).title || ''))),
-      !CRASH30_OPEN ? h('button', {
+      !isExpanded ? h('button', {
         type: 'button',
         class: 'ghost',
-        onclick: () => { CRASH30_OPEN = true; homeView(); }
+        onclick: () => { CRASH30_OPEN = true; onRefresh(); }
       }, 'Xem 4 chặng') : null
     ),
-    CRASH30_OPEN ? h('div', { class: 'stack', style: { gap: '8px', marginTop: '4px' } }, stageNodes) : null
+    isExpanded ? h('div', { class: 'stack', style: { gap: '8px', marginTop: '4px' } }, stageNodes) : null
   );
+}
+
+function crash30TabView() {
+  stopSay();
+  const d = DATA[S.lang] || DATA.en;
+  if (!d || !d.crash30) return go('practice');
+  const sec = crash30HomeSection(d, () => crash30TabView(), { alwaysOpen: true });
+  mount(h('div', { class: 'stack-lg', style: { gap: '12px' } },
+    h('div', { class: 'row between', style: { alignItems: 'center' } },
+      h('button', { type: 'button', class: 'ghost mini', onclick: () => go('practice') }, '← Luyện tập'),
+      feedbackBtn({ mode: 'crash30' })
+    ),
+    sec
+  ));
 }
 
 function crash30DayView(dayNum) {
@@ -5704,7 +5720,7 @@ function crash30DayView(dayNum) {
             crash30DayView(day.n + 1);
           } else {
             setTabs(true);
-            go('home');
+            go('crash30');
           }
         }
       }, isDayDone ? ('✓ Đã hoàn thành Ngày ' + day.n + (day.n < totalN ? ' · Sang Ngày ' + (day.n + 1) + ' ➔' : '')) : ('✓ Hoàn thành Ngày ' + day.n + ' & Lưu tiến độ'));
@@ -5724,8 +5740,8 @@ function crash30DayView(dayNum) {
         h('button', {
           type: 'button',
           class: 'ghost mini',
-          onclick: () => { cleanup(); setTabs(true); go('home'); }
-        }, '← Trang chủ'),
+          onclick: () => { cleanup(); setTabs(true); go('crash30'); }
+        }, '← 30 ngày'),
         h('span', { class: 'chip accent' }, 'Ngày ' + day.n + '/' + totalN + ' · B1'),
         h('div', { class: 'row', style: { gap: '4px' } },
           day.n > 1 ? h('button', { type: 'button', class: 'ghost mini', onclick: () => { cleanup(); CRASH30_TAB = 'dialogue'; crash30DayView(day.n - 1); } }, '‹ Trước') : null,
@@ -6095,10 +6111,14 @@ function openOnboardingModal(force = false) {
       skipped: st.skipped,
       ts: Date.now()
     };
-    if (openCrash30) CRASH30_OPEN = true;
     save();
     closeModal();
-    homeView();
+    if (openCrash30) {
+      CRASH30_OPEN = true;
+      go('crash30');
+    } else {
+      homeView();
+    }
   }
 
   function renderStep() {
@@ -7504,14 +7524,21 @@ function dictationTabView() {
 }
 
 function practiceTabView() {
+  const dEn = DATA[S.lang];
+  const c30 = dEn && dEn.crash30;
+  const c30Done = c30 ? crash30DoneCount(c30) : 0;
+  const c30Tot = c30 && c30.days ? c30.days.length : 30;
+  const c30Next = c30 ? crash30NextDay(c30) : 1;
+
   const groups = [
     {
       iconEl: '🎧',
-      title: 'Nghe & Nói (Dictation · Shadowing)',
-      subtitle: 'Kho 117+ bài nghe chép chính tả & nói đuổi theo cấp độ A1–C2',
-      chip: '117+ bài',
+      title: 'Nghe, Nói & Giao tiếp phản xạ',
+      subtitle: 'Giao tiếp cấp tốc 30 ngày, 117+ bài nghe chép chính tả & nói đuổi Shadowing',
+      chip: c30 ? '3 chuyên đề' : '117+ bài',
       defaultOpen: true,
       items: [
+        c30 ? { icon: '⚡', title: 'Giao tiếp cấp tốc 30 ngày (B1)', desc: `4 chặng · Hội thoại, mẫu câu, đóng vai AI & phản xạ nhanh (Tiếp theo: Ngày ${c30Next}).`, badge: `${c30Done}/${c30Tot} ngày`, fn: () => go('crash30') } : null,
         { icon: '🎧', title: 'Dictation & Shadowing Studio (A1–C2)', desc: 'Nghe giọng chuẩn, chép chính tả, phân loại lỗi nghe & luyện Shadowing.', badge: '117+ bài', fn: () => go('dictation') },
         { icon: '🗣️', title: 'Shadowing · Hội thoại theo chủ đề', desc: 'Luyện nói đuổi các mẫu hội thoại trong từng chủ đề đã học.', badge: 'Nói', fn: () => { SKILL_TAB = 'speak'; go('skills'); } }
       ]
@@ -7557,7 +7584,7 @@ function practiceTabView() {
       subtitle: grp.subtitle,
       defaultOpen: grp.defaultOpen,
       chips: [h('span', { class: 'chip small' }, grp.chip)],
-      body: grp.items.map((it) => h('button', {
+      body: grp.items.filter(Boolean).map((it) => h('button', {
         class: 'lesson',
         style: { marginTop: '6px' },
         onclick: it.fn
@@ -8073,8 +8100,6 @@ function homeView(opts = {}) {
     return wrap;
   })();
 
-  const c30Node = S.lang === 'en' ? crash30HomeSection(d) : null;
-  const preferC30Top = CRASH30_OPEN || (ob && ob.goalType === 'comm30');
   const allUnitsFlat = allSections.flatMap((s) => s.units);
   const doneUnitsCount = allUnitsFlat.filter((u) => u.topics.every((t) => topicDone(t))).length;
 
@@ -8119,13 +8144,11 @@ function homeView(opts = {}) {
       )
     ),
     todayCard,
-    preferC30Top ? c30Node : null,
     catBar,
     topicsNode,
-    !preferC30Top ? c30Node : null,
     catExamCard,
     metaFooterCard,
-    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.10 · Section (Cấp độ) & Unit')));
+    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.11 · Section (Cấp độ) & Unit')));
   if (_keepY != null) window.scrollTo(0, _keepY);
 }
 
