@@ -175,58 +175,68 @@ summary.duo-unit-hdr {
 summary.duo-unit-hdr::-webkit-details-marker { display: none; }
 details.duo-unit[open] > summary .acc-arrow { transform: rotate(180deg); }
 .duo-unit-hdr .duo-u-meta { flex: 1; min-width: 0; }
-.duo-unit-hdr .duo-u-kicker { font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; opacity: .88; display: block; }
-.duo-unit-hdr .duo-u-title { font-size: 1.02rem; font-weight: 800; display: block; line-height: 1.25; }
-.duo-unit-hdr .duo-u-sub { font-size: .8rem; opacity: .9; display: block; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.duo-unit-prog { height: 6px; border-radius: 99px; background: rgba(255,255,255,.26); margin-top: 7px; overflow: hidden; }
+.duo-unit-hdr .duo-u-kicker { font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; opacity: .92; display: block; }
+.duo-unit-hdr .duo-u-title { font-size: 1.05rem; font-weight: 800; display: block; line-height: 1.25; margin-top: 2px; }
+.duo-unit-hdr .duo-u-sub { font-size: .78rem; opacity: .9; display: block; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.duo-guidebook-btn {
+  flex: none; display: inline-flex; align-items: center; gap: 6px;
+  min-height: 36px; padding: 6px 12px; border-radius: 12px;
+  background: rgba(0, 0, 0, .14); border: 2px solid rgba(255, 255, 255, .36);
+  color: #fff; font-size: .74rem; font-weight: 800; letter-spacing: .04em;
+  text-transform: uppercase; cursor: pointer; white-space: nowrap;
+}
+.duo-guidebook-btn:hover { background: rgba(0, 0, 0, .24); }
+.duo-unit-prog { height: 5px; border-radius: 99px; background: rgba(255,255,255,.28); margin-top: 8px; overflow: hidden; }
 .duo-unit-prog > i { display: block; height: 100%; background: #fff; border-radius: 99px; transition: width .3s ease; }
 .duo-path {
-  display: flex; flex-direction: column; align-items: center; gap: 18px;
-  padding: 22px 12px 18px; position: relative;
-  background: radial-gradient(circle at 50% 0%, rgba(15,82,87,.04), transparent 70%);
+  display: flex; flex-direction: column; align-items: center; gap: 22px;
+  padding: 26px 12px 24px; position: relative;
 }
 .duo-step { display: flex; flex-direction: column; align-items: center; width: 100%; position: relative; }
 .duo-node-anchor { display: flex; flex-direction: column; align-items: center; transform: translateX(var(--duo-x, 0px)); transition: transform .2s ease; position: relative; }
 .duo-float-tip {
-  position: relative; margin-bottom: 8px; padding: 5px 12px; border-radius: 12px;
-  background: var(--surface); border: 2px solid #58cc02; color: #46a302;
-  font-size: .74rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
-  box-shadow: 0 3px 10px rgba(88,204,2,.2); animation: duoBounce 1.8s ease-in-out infinite;
-  white-space: nowrap;
+  position: relative; margin-bottom: 10px; padding: 6px 14px; border-radius: 12px;
+  background: var(--surface); border: 1.5px solid var(--line); color: #1cb0f6;
+  font-size: .78rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  box-shadow: 0 4px 12px rgba(0,0,0,.18); animation: duoBounce 1.8s ease-in-out infinite;
+  white-space: nowrap; cursor: pointer; min-height: 0;
 }
-:root[data-theme="dark"] .duo-float-tip { color: #7ce82a; }
 .duo-float-tip::after {
-  content: ''; position: absolute; left: 50%; bottom: -7px; transform: translateX(-50%) rotate(45deg);
-  width: 10px; height: 10px; background: var(--surface); border-right: 2px solid #58cc02; border-bottom: 2px solid #58cc02;
+  content: ''; position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%) rotate(45deg);
+  width: 10px; height: 10px; background: var(--surface); border-right: 1.5px solid var(--line); border-bottom: 1.5px solid var(--line);
 }
 @keyframes duoBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 .duo-ring {
-  width: 82px; height: 82px; border-radius: 50%; padding: 5px;
+  width: 92px; height: 92px; border-radius: 50%; padding: 6px;
   display: grid; place-items: center; position: relative;
-  background: conic-gradient(var(--ring-col, var(--teal)) calc(var(--pct, 0) * 1%), var(--line) 0);
+  background: conic-gradient(var(--ring-col, #1cb0f6) calc(var(--pct, 0) * 1%), var(--line) 0);
 }
+.duo-ring.idle-ring { background: transparent; padding: 0; width: 74px; height: 74px; }
+.duo-ring-inner {
+  width: 100%; height: 100%; border-radius: 50%; padding: 5px;
+  background: var(--surface); display: grid; place-items: center;
+}
+:root[data-theme="dark"] .duo-ring-inner { background: #131f24; }
+.duo-ring.idle-ring .duo-ring-inner { padding: 0; background: transparent; }
 .duo-btn {
   width: 100%; height: 100%; min-height: 0; padding: 0; border-radius: 50%; border: none;
-  display: grid; place-items: center; font-size: 1.35rem; font-weight: 800;
-  background: var(--surface); color: var(--muted); box-shadow: 0 5px 0 var(--line);
+  display: grid; place-items: center; font-size: 1.25rem; font-weight: 800;
   transition: transform .1s ease, box-shadow .1s ease; cursor: pointer;
 }
-.duo-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--line); }
-.duo-btn.cur { background: #58cc02; color: #fff; box-shadow: 0 5px 0 #46a302; }
-.duo-btn.cur:active { box-shadow: 0 2px 0 #46a302; }
-.duo-btn.done { background: #f59e0b; color: #fff; box-shadow: 0 5px 0 #b45309; }
-.duo-btn.done:active { box-shadow: 0 2px 0 #b45309; }
-.duo-btn.prog { background: var(--teal); color: var(--teal-ink); box-shadow: 0 5px 0 rgba(10,55,58,.85); }
-.duo-btn.prog:active { box-shadow: 0 2px 0 rgba(10,55,58,.85); }
-.duo-btn.idle { background: var(--surface); color: var(--ink); border: 2px solid var(--line); box-shadow: 0 5px 0 var(--line); }
-.duo-label { margin-top: 8px; max-width: 175px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.duo-label b { font-size: .84rem; line-height: 1.25; color: var(--ink); }
-.duo-label span { font-size: .74rem; color: var(--muted); line-height: 1.25; }
-.duo-float-tip { cursor: pointer; }
+.duo-btn.cur { background: #1cb0f6; color: #fff; box-shadow: 0 6px 0 #148ec9; }
+.duo-btn.cur:active { transform: translateY(4px); box-shadow: 0 2px 0 #148ec9; }
+.duo-btn.done { background: #ffc800; color: #fff; box-shadow: 0 6px 0 #d69e00; }
+.duo-btn.done:active { transform: translateY(4px); box-shadow: 0 2px 0 #d69e00; }
+.duo-btn.prog { background: #1cb0f6; color: #fff; box-shadow: 0 6px 0 #148ec9; }
+.duo-btn.prog:active { transform: translateY(4px); box-shadow: 0 2px 0 #148ec9; }
+.duo-btn.idle { background: #e2e8f0; color: #64748b; box-shadow: 0 6px 0 #cbd5e1; }
+.duo-btn.idle:active { transform: translateY(4px); box-shadow: 0 2px 0 #cbd5e1; }
+:root[data-theme="dark"] .duo-btn.idle { background: #37464f; color: #94a3b8; box-shadow: 0 6px 0 #26333b; }
+:root[data-theme="dark"] .duo-btn.idle:active { box-shadow: 0 2px 0 #26333b; }
 .duo-popover {
   position: relative; width: 100%; max-width: 440px; margin-top: 16px; padding: 14px; border-radius: 18px;
-  background: var(--surface); border: 2px solid var(--bubble-col, var(--teal));
-  box-shadow: 0 12px 28px rgba(0,0,0,.14);
+  background: var(--surface); border: 2px solid var(--bubble-col, #1cb0f6);
+  box-shadow: 0 12px 28px rgba(0,0,0,.16);
   display: flex; flex-direction: column; gap: 10px; animation: fadeInDown .16s ease;
 }
 .duo-popover::before, .duo-popover::after {
@@ -235,7 +245,7 @@ details.duo-unit[open] > summary .acc-arrow { transform: rotate(180deg); }
 }
 .duo-popover::before {
   top: -10px; width: 18px; height: 18px; background: var(--surface);
-  border-top: 2px solid var(--bubble-col, var(--teal)); border-left: 2px solid var(--bubble-col, var(--teal));
+  border-top: 2px solid var(--bubble-col, #1cb0f6); border-left: 2px solid var(--bubble-col, #1cb0f6);
 }
 .duo-popover::after {
   top: -7px; width: 16px; height: 16px; background: var(--surface);
@@ -243,7 +253,7 @@ details.duo-unit[open] > summary .acc-arrow { transform: rotate(180deg); }
 .duo-cta-btn {
   width: 100%; border: none; border-radius: 14px; min-height: 46px; padding: 10px 14px;
   font-weight: 800; font-size: .94rem; letter-spacing: .02em; color: #fff;
-  background: var(--bubble-col, var(--teal));
+  background: var(--bubble-col, #1cb0f6);
   box-shadow: 0 4px 0 rgba(0,0,0,.22); transition: transform .1s ease, box-shadow .1s ease;
 }
 .duo-cta-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,.22); }
@@ -1374,7 +1384,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/en.json và data/ielts_30day_listening.js,
    âm thanh thu sẵn nằm trong audio/ (audio/w*.json, audio/mail/, audio/listen/, audio/ielts/).
    ===================================================================== */
-const APP_BUILD_ID = '20261126-0600';
+const APP_BUILD_ID = '20261126-0630';
 const LANGS = {
   en: { label: 'English', vi: 'Tiếng Anh', short: 'Anh', folder: '', tts: 'en-US', rec: 'en-US', lang: 'en', cjk: false },
 };
@@ -1385,13 +1395,13 @@ const langPath = (code, rel) => { const f = langFolder(code); return f ? f + '/'
 const KEY = 'noiduoc-v2'; // giữ khóa cũ để không mất tiến độ đã lưu trên máy
 const CATEGORIES = {
   en: [
+    { id: 'all', name: 'Tất cả các chủ đề', short: 'Tất cả', icon: '📚', level: 'A1–C2', count: '87 bài', desc: 'Toàn bộ 87 bài học tiếng Anh phân loại chuẩn quốc tế theo 6 bậc CEFR từ A1 đến C2' },
     { id: 'a1', name: 'Khởi động & Cơ bản', short: 'Sơ cấp 1', icon: '🐣', level: 'A1', count: '14 bài', desc: 'Chào hỏi, quốc gia, số đếm, màu sắc, gia đình, các hoạt động trong ngày, ăn uống, hoa quả, rau củ, quần áo, trường học, đồ dùng học tập, động vật' },
     { id: 'a2', name: 'Đời sống & Giao tiếp', short: 'Sơ cấp 2', icon: '🌿', level: 'A2', count: '17 bài', desc: 'Ngoại hình, cảm xúc, hành động cơ thể, nhà ở & việc nhà, nhà bếp, gọi món nhà hàng, mua sắm, hỏi đường, quê hương, thời tiết, thiên nhiên, lễ Tết, sở thích' },
     { id: 'b1', name: 'Trung cấp 1 · Đời sống xã hội', short: 'Trung cấp 1', icon: '🎨', level: 'B1', count: '15 bài', desc: 'Tính cách, sức khỏe, thể thao, bóng đá, thời trang, âm nhạc & phim ảnh, nghệ thuật, công nghệ, du lịch, bưu điện, ngân hàng, môi trường, quân đội, nghề nghiệp & công việc' },
     { id: 'b2', name: 'Trung cấp 2 · Công việc & Ngành nghề', short: 'Trung cấp 2', icon: '💼', level: 'B2', count: '21 bài', desc: 'Phỏng vấn STAR, công ty & tiếp khách; Thương mại & Sản xuất (chào hàng, PO/Incoterms, nhà máy, bao bì, QC lỗi & Claim); Dịch vụ & CSKH; Du lịch & Khách sạn; Bảo hiểm; Xây dựng & Bất động sản…' },
     { id: 'c1', name: 'Cao cấp & Học thuật', short: 'Cao cấp', icon: '🏛️', level: 'C1', count: '10 bài', desc: 'Nghiên cứu học thuật, kinh tế vĩ mô, M&A, khung pháp lý & IP, tranh biện; tài chính doanh nghiệp & VC, dữ liệu lớn & thống kê, khí hậu ESG, y sinh học, tâm lý ra quyết định' },
-    { id: 'c2', name: 'Thành thạo & Ngoại giao', short: 'Bậc thầy', icon: '👑', level: 'C2', count: '10 bài', desc: 'Quan hệ quốc tế & địa chính trị, triết học, biên dịch, đạo đức AI, khủng hoảng; hiến pháp & thể chế, văn học so sánh & di sản, kinh tế thể chế, triết lý khoa học, tu từ chính trị' },
-    { id: 'all', name: 'Tất cả các chủ đề', short: 'Tất cả', icon: '📚', level: 'A1–C2', count: '87 bài', desc: 'Toàn bộ 87 bài học tiếng Anh phân loại chuẩn quốc tế theo 6 bậc CEFR từ A1 đến C2' }
+    { id: 'c2', name: 'Thành thạo & Ngoại giao', short: 'Bậc thầy', icon: '👑', level: 'C2', count: '10 bài', desc: 'Quan hệ quốc tế & địa chính trị, triết học, biên dịch, đạo đức AI, khủng hoảng; hiến pháp & thể chế, văn học so sánh & di sản, kinh tế thể chế, triết lý khoa học, tu từ chính trị' }
   ]
 };
 
@@ -1603,7 +1613,7 @@ function cleanPhaseName(name) {
 }
 const EN_CATEGORIES = CATEGORIES.en;
 let subjectsOpen = false;
-const fresh = () => ({ v: 2, name: '', goal: 20, lang: 'en', enCat: 'a1', zhCat: 'hsk1', jaCat: 'n5', onboarding: null, days: {}, dl: {}, pv: {}, srs: {}, lessons: {}, spoken: {}, written: {}, fill: {}, gq: {}, en_crash30: {}, dictation: {}, dictationErrors: {}, ach: {}, del: {}, delAll: 0, t: 0 });
+const fresh = () => ({ v: 2, name: '', goal: 20, lang: 'en', enCat: 'all', zhCat: 'hsk1', jaCat: 'n5', onboarding: null, days: {}, dl: {}, pv: {}, srs: {}, lessons: {}, spoken: {}, written: {}, fill: {}, gq: {}, en_crash30: {}, dictation: {}, dictationErrors: {}, ach: {}, del: {}, delAll: 0, t: 0 });
 let S = fresh();
 try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch (e) { /* bị chặn lưu trữ */ }
 S.lang = 'en';
@@ -7505,11 +7515,73 @@ function gamesTabView() {
   }
   renderGame();
 }
+function openUnitGuidebookModal(ph, unitIdx) {
+  if (document.getElementById('guidebook-overlay')) return;
+  const d = DATA[S.lang];
+  const gramSeen = new Set();
+  const grams = [];
+  const sampleVocab = [];
+  (ph.topics || []).forEach((t) => {
+    (t.gram || []).forEach((gid) => {
+      if (!gramSeen.has(gid) && d && d.grammar && d.grammar[gid]) {
+        gramSeen.add(gid);
+        grams.push(d.grammar[gid]);
+      }
+    });
+    if (t.vocab && t.vocab.length) {
+      t.vocab.slice(0, 3).forEach((v) => sampleVocab.push(v));
+    }
+  });
+
+  const overlay = h('div', {
+    id: 'guidebook-overlay',
+    style: {
+      position: 'fixed', inset: '0', zIndex: '9999',
+      background: 'rgba(15, 23, 42, 0.72)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+    },
+    onclick: (e) => { if (e.target === overlay) overlay.remove(); }
+  });
+  const card = h('div', {
+    class: 'panel stack',
+    style: { width: '100%', maxWidth: '520px', maxHeight: '88vh', overflowY: 'auto', padding: '18px', gap: '12px', borderRadius: '18px' }
+  },
+    h('div', { class: 'row between', style: { alignItems: 'center' } },
+      h('div', { class: 'stack', style: { gap: '2px' } },
+        h('span', { class: 'small', style: { fontWeight: 800, color: '#58cc02', letterSpacing: '.04em' } }, `GUIDEBOOK · CHẶNG ${unitIdx + 1}`),
+        h('h3', { style: { margin: 0 } }, ph.name ? cleanPhaseName(ph.name) : ('Chặng ' + (unitIdx + 1)))
+      ),
+      h('button', { type: 'button', class: 'ghost mini', onclick: () => overlay.remove() }, '✕')
+    ),
+    grams.length ? h('div', { class: 'stack', style: { gap: '8px' } },
+      h('b', { class: 'small', style: { color: 'var(--teal)' } }, '📖 Ngữ pháp trọng tâm'),
+      ...grams.slice(0, 8).map((g) => h('div', { class: 'panel stack', style: { gap: '4px', padding: '10px 12px', background: 'var(--sunk)' } },
+        h('b', { style: { fontSize: '.92rem' } }, g.t || g.title || ''),
+        g.f ? h('span', { class: 'chip small', style: { alignSelf: 'flex-start', fontFamily: 'monospace' } }, g.f) : null,
+        g.d ? h('span', { class: 'small muted' }, g.d) : null
+      ))
+    ) : null,
+    sampleVocab.length ? h('div', { class: 'stack', style: { gap: '6px' } },
+      h('b', { class: 'small', style: { color: 'var(--teal)' } }, '💬 Mẫu từ & câu tiêu biểu'),
+      ...sampleVocab.slice(0, 8).map((v) => h('div', { class: 'row between', style: { padding: '8px 10px', borderRadius: '10px', background: 'var(--sunk)', gap: '8px' } },
+        h('div', { class: 'stack', style: { gap: '2px', minWidth: 0 } },
+          h('b', { lang: 'en', style: { fontSize: '.92rem' } }, plain(v.w)),
+          h('span', { class: 'small muted' }, v.m)
+        ),
+        spk('en', v.w)
+      ))
+    ) : null
+  );
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+}
+
 function homeView() {
   const d = DATA[S.lang], st = streak(), xp = xpOf(todayN(), S.lang), due = dueIn(S.lang);
   const langCats = CATEGORIES[S.lang];
   if (S.lang === 'en') {
-    if (!S.enCat || S.enCat === 'life') S.enCat = 'a1';
+    if (!S.enCatAllDefault) { S.enCat = 'all'; S.enCatAllDefault = 1; save(); }
+    if (!S.enCat || S.enCat === 'life') S.enCat = 'all';
     else if (S.enCat === 'hobbies') S.enCat = 'b1';
     else if (S.enCat === 'business') S.enCat = 'b2';
   }
@@ -7524,7 +7596,7 @@ function homeView() {
     else if (S.jaCat === 'comm') S.jaCat = 'n4';
     else if (S.jaCat === 'kanji') S.jaCat = 'n5';
   }
-  const curCat = langCats ? (S.lang === 'en' ? (S.enCat || 'a1') : (S.lang === 'zh' ? (S.zhCat || 'hsk1') : (S.jaCat || 'n5'))) : 'all';
+  const curCat = langCats ? (S.lang === 'en' ? (S.enCat || 'all') : (S.lang === 'zh' ? (S.zhCat || 'hsk1') : (S.jaCat || 'n5'))) : 'all';
   const nx = nextLesson(d, curCat);
   const gf = h('i'); requestAnimationFrame(() => { gf.style.width = Math.min(100, Math.round((xp / goal()) * 100)) + '%'; });
 
@@ -7539,8 +7611,13 @@ function homeView() {
     cur.topics.push(t);
   }
 
+  const dynCatCount = (cid) => {
+    const n = cid === 'all' ? d.topics.length : d.topics.filter((t) => (t.category || defCategory) === cid).length;
+    return n + ' chủ đề';
+  };
+
   const curCatObj = langCats ? (langCats.find((c) => c.id === curCat) || langCats[0]) : null;
-  const catBar = langCats ? h('div', { class: 'subjects-box stack', style: { gap: '6px', margin: '4px 0' } },
+  const catBar = langCats ? h('div', { class: 'subjects-box stack', style: { gap: '8px', margin: '4px 0' } },
     h('button', {
       class: 'subjects-trigger' + (subjectsOpen ? ' open' : ''),
       'aria-expanded': String(subjectsOpen),
@@ -7556,7 +7633,7 @@ function homeView() {
         h('span', { class: 'chip level ' + curCatObj.level.split('–')[0].toLowerCase().replace(/\s+/g, '') }, curCatObj.level)
       ),
       h('div', { class: 'row', style: { gap: '8px', alignItems: 'center', flex: 'none' } },
-        h('span', { class: 'small muted' }, curCatObj.count),
+        h('span', { class: 'small muted' }, dynCatCount(curCatObj.id)),
         h('span', { class: 'subjects-arrow' }, subjectsOpen ? '▲' : '▼')
       )
     ),
@@ -7584,13 +7661,49 @@ function homeView() {
               h('span', { class: 'chip level ' + c.level.split('–')[0].toLowerCase().replace(/\s+/g, '') }, c.level)
             ),
             h('div', { class: 'row', style: { gap: '8px', alignItems: 'center' } },
-              h('span', { class: 'small muted' }, c.count),
+              h('span', { class: 'small muted' }, dynCatCount(c.id)),
               isSelected && h('span', { class: 'subjects-check' }, '✓')
             )
           ),
           h('p', { class: 'small muted', style: { margin: '4px 0 0 28px', textAlign: 'left', lineHeight: 1.35 } }, c.desc)
         );
       })
+    ),
+    h('select', {
+      'aria-label': 'Chọn nhanh chủ đề trong lộ trình',
+      style: { minHeight: '42px', padding: '8px 12px', fontSize: '.88rem', borderRadius: '12px' },
+      onchange: (e) => {
+        const tid = e.target.value;
+        if (!tid) return;
+        const target = filteredTopics.find((t) => String(t.id) === String(tid));
+        if (!target) return;
+        const phObj = phases.find((ph) => ph.topics.includes(target));
+        if (phObj) {
+          const pTitle = phObj.name ? cleanPhaseName(phObj.name) : 'Chặng';
+          const pKey = S.lang + ':' + curCat + ':' + pTitle;
+          openPhases.add(pKey);
+          closedPhases.delete(pKey);
+        }
+        openTopics.clear();
+        openTopics.add(target.lang + ':' + target.id);
+        homeView();
+        requestAnimationFrame(() => {
+          const el = document.getElementById('duo-step-' + target.id);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      }
+    },
+      h('option', { value: '' }, `📌 Chọn nhanh chủ đề (${filteredTopics.length} chủ đề)...`),
+      ...phases.map((ph, phi) => h('optgroup', {
+        label: `Chặng ${phi + 1}: ${ph.name ? cleanPhaseName(ph.name) : ('Nhóm ' + (phi + 1))}`
+      },
+        ...ph.topics.map((t, ti) => {
+          const dnCnt = t.lessons.filter((_, i) => lessonDone(t, i)).length;
+          const num = curCat === 'all' ? t.pos : (t.catPos || (filteredTopics.indexOf(t) + 1));
+          const lbl = `${num}. ${t.sub || t.title} [${(t.level || t.category || 'A1').toUpperCase()}] (${dnCnt}/${t.lessons.length})`;
+          return h('option', { value: String(t.id), selected: openTopics.has(t.lang + ':' + t.id) }, lbl);
+        })
+      ))
     )
   ) : null;
 
@@ -7676,11 +7789,11 @@ function homeView() {
 
   const topicsNode = (() => {
     const unitPalettes = [
-      'linear-gradient(135deg, #0f5257, #147a74)',
-      'linear-gradient(135deg, #2b8a3e, #40c057)',
-      'linear-gradient(135deg, #4338ca, #6366f1)',
-      'linear-gradient(135deg, #b45309, #f59e0b)',
-      'linear-gradient(135deg, #6d28d9, #8b5cf6)'
+      'linear-gradient(135deg, #58cc02, #46a302)',
+      'linear-gradient(135deg, #1cb0f6, #148ec9)',
+      'linear-gradient(135deg, #ce82ff, #a560e8)',
+      'linear-gradient(135deg, #ff9600, #e07b00)',
+      'linear-gradient(135deg, #0f5257, #147a74)'
     ];
     const renderUnit = (ph, phIdx) => {
       const pTitle = ph.name ? cleanPhaseName(ph.name) : ('Chặng ' + (phIdx + 1));
@@ -7691,13 +7804,10 @@ function homeView() {
       const isComplete = doneTopics === ph.topics.length && ph.topics.length > 0;
       const defOpen = hasNx || (!nx && phIdx === 0) || phases.length <= 1;
       const isOpen = openPhases.has(pKey) || (defOpen && !closedPhases.has(pKey));
-      const subText = isComplete
-        ? '✓ Đã hoàn thành tất cả chủ đề trong chặng'
-        : (hasNx ? ('Đang học: ' + (nx.t.sub || nx.t.title)) : ((ph.topics[0] && (ph.topics[0].sub || ph.topics[0].title)) + (ph.topics.length > 1 ? ' …' : '')));
+      const lvChip = ph.topics[0] && ph.topics[0].level ? ph.topics[0].level : (curCat !== 'all' ? curCat.toUpperCase() : '');
 
       const attrs = {
         class: 'duo-unit phase-acc',
-        style: hasNx ? { border: '2px solid #58cc02' } : undefined,
         ontoggle: (e) => {
           if (e.target !== e.currentTarget) return;
           if (e.currentTarget.open) { openPhases.add(pKey); closedPhases.delete(pKey); }
@@ -7709,17 +7819,24 @@ function homeView() {
       return h('details', attrs,
         h('summary', {
           class: 'duo-unit-hdr',
-          style: { background: isComplete ? 'linear-gradient(135deg, #d97706, #f59e0b)' : unitPalettes[phIdx % unitPalettes.length] }
+          style: { background: hasNx ? unitPalettes[0] : (isComplete ? 'linear-gradient(135deg, #ffc800, #d9a300)' : unitPalettes[(phIdx + 1) % unitPalettes.length]) }
         },
           h('div', { class: 'duo-u-meta' },
             h('span', { class: 'duo-u-kicker' },
-              (isComplete ? '👑 ĐÃ XONG ' : (hasNx ? '🎯 ĐANG HỌC · ' : '')) + `CHẶNG ${phIdx + 1} · ${doneTopics}/${ph.topics.length} BÀI`
+              `${lvChip ? lvChip + ' · ' : ''}SECTION ${phIdx + 1}, UNIT ${phIdx + 1} · ${doneTopics}/${ph.topics.length} BÀI`
             ),
             h('span', { class: 'duo-u-title' }, pTitle),
-            h('span', { class: 'duo-u-sub' }, subText),
             h('div', { class: 'duo-unit-prog' }, h('i', { style: { width: pctUnit + '%' } }))
           ),
-          h('span', { class: 'acc-arrow', style: { color: '#fff', fontSize: '1rem', flexShrink: 0 }, 'aria-hidden': 'true' }, '▾')
+          h('button', {
+            type: 'button',
+            class: 'duo-guidebook-btn',
+            onclick: (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              openUnitGuidebookModal(ph, phIdx);
+            }
+          }, '📖 GUIDEBOOK')
         ),
         h('div', { class: 'duo-path' },
           ph.topics.map((t, ti) => topicCard(t, nx, curCat === 'all' ? t.pos : (t.catPos || (filteredTopics.indexOf(t) + 1)), ti))
@@ -13525,8 +13642,51 @@ function topicCard(t, nx, num, idxInPhase = 0) {
   const shiftX = offsets[idxInPhase % offsets.length];
 
   const btnCls = isDone ? 'done' : (isCur ? 'cur' : (done > 0 ? 'prog' : 'idle'));
-  const ringCol = isDone ? '#f59e0b' : (isCur ? '#58cc02' : 'var(--teal)');
-  const nodeGlyph = isDone ? '👑' : (isCur ? '★' : String(displayNum));
+  const ringCol = isDone ? '#ffc800' : '#1cb0f6';
+  const duoIcon = (kind) => {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('width', kind === 'idle' ? '24' : '28');
+    svg.setAttribute('height', kind === 'idle' ? '24' : '28');
+    svg.setAttribute('aria-hidden', 'true');
+    if (kind === 'done') {
+      const p = document.createElementNS(ns, 'path');
+      p.setAttribute('d', 'M5 12.8l4.5 4.5L19 7.8');
+      p.setAttribute('fill', 'none');
+      p.setAttribute('stroke', 'currentColor');
+      p.setAttribute('stroke-width', '3.3');
+      p.setAttribute('stroke-linecap', 'round');
+      p.setAttribute('stroke-linejoin', 'round');
+      svg.appendChild(p);
+    } else if (kind === 'idle') {
+      const shackle = document.createElementNS(ns, 'path');
+      shackle.setAttribute('d', 'M7.5 10.2V7.6a4.5 4.5 0 0 1 9 0v2.6');
+      shackle.setAttribute('fill', 'none');
+      shackle.setAttribute('stroke', 'currentColor');
+      shackle.setAttribute('stroke-width', '2.5');
+      shackle.setAttribute('stroke-linecap', 'round');
+      const body = document.createElementNS(ns, 'rect');
+      body.setAttribute('x', '5');
+      body.setAttribute('y', '10');
+      body.setAttribute('width', '14');
+      body.setAttribute('height', '10.5');
+      body.setAttribute('rx', '3.2');
+      body.setAttribute('fill', 'currentColor');
+      svg.appendChild(shackle);
+      svg.appendChild(body);
+    } else {
+      const star = document.createElementNS(ns, 'path');
+      star.setAttribute('d', 'M12 2.7l2.82 5.71 6.3.92-4.56 4.44 1.08 6.28L12 17.08l-5.64 2.97 1.08-6.28-4.56-4.44 6.3-.92L12 2.7z');
+      star.setAttribute('fill', 'currentColor');
+      star.setAttribute('stroke', 'currentColor');
+      star.setAttribute('stroke-width', '1.1');
+      star.setAttribute('stroke-linejoin', 'round');
+      svg.appendChild(star);
+    }
+    return svg;
+  };
+  const nodeGlyph = duoIcon(btnCls);
 
   const nextLessonIdx = isCur && nx ? nx.i : Math.max(0, t.lessons.findIndex((_, i) => !lessonDone(t, i)));
   const ctaLabel = isDone
@@ -13634,35 +13794,33 @@ function topicCard(t, nx, num, idxInPhase = 0) {
     ) : null
   ) : null;
 
-  return h('section', { class: 'duo-step' },
+  return h('section', { id: 'duo-step-' + t.id, class: 'duo-step' },
     h('div', { class: 'duo-node-anchor', style: { '--duo-x': shiftX + 'px' } },
       isCur ? h('button', {
         type: 'button',
         class: 'duo-float-tip',
         onclick: () => lessonView(nx.t, nx.i)
-      }, done > 0 ? 'HỌC TIẾP' : 'BẮT ĐẦU') : null,
+      }, done > 0 ? 'HỌC TIẾP' : 'START') : null,
       h('div', {
-        class: 'duo-ring',
+        class: 'duo-ring' + (btnCls === 'idle' ? ' idle-ring' : ''),
         style: { '--pct': pct, '--ring-col': ringCol }
       },
-        h('button', {
-          type: 'button',
-          class: 'duo-btn ' + btnCls,
-          'aria-expanded': String(open),
-          'aria-label': (t.sub || t.title) + ' (' + done + '/' + totalL + ')',
-          onclick: () => {
-            if (open) openTopics.delete(ok);
-            else {
-              openTopics.clear();
-              openTopics.add(ok);
+        h('div', { class: 'duo-ring-inner' },
+          h('button', {
+            type: 'button',
+            class: 'duo-btn ' + btnCls,
+            'aria-expanded': String(open),
+            'aria-label': (t.sub || t.title) + ' (' + done + '/' + totalL + ')',
+            onclick: () => {
+              if (open) openTopics.delete(ok);
+              else {
+                openTopics.clear();
+                openTopics.add(ok);
+              }
+              homeView();
             }
-            homeView();
-          }
-        }, nodeGlyph)
-      ),
-      h('div', { class: 'duo-label' },
-        h('b', {}, t.sub && t.sub !== t.title ? t.sub : t.title),
-        h('span', {}, (isDone ? '✓ Hoàn thành ' : '') + `${done}/${totalL} bài`)
+          }, nodeGlyph)
+        )
       )
     ),
     popover
