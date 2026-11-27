@@ -1352,7 +1352,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/en.json và data/ielts_30day_listening.js,
    âm thanh thu sẵn nằm trong audio/ (audio/w*.json, audio/mail/, audio/listen/, audio/ielts/).
    ===================================================================== */
-const APP_BUILD_ID = '20261127-0540';
+const APP_BUILD_ID = '20261127-0755';
 const LANGS = {
   en: { label: 'English', vi: 'Tiếng Anh', short: 'Anh', folder: '', tts: 'en-US', rec: 'en-US', lang: 'en', cjk: false },
 };
@@ -7472,7 +7472,7 @@ function homeView(opts = {}) {
           '🚀 Bộ đề vượt cấp ' + lvLabel + ' (' + catDoneTopics + '/' + filteredTopics.length + ' bài)'
         ),
         h('div', { class: 'small muted', style: { fontSize: '.76rem', marginTop: '2px' } },
-          'Nhiều bộ đề xào chẻ từ vựng, nghe, đọc & viết toàn cấp · Đạt ≥ 80% để pass 100% ' + curCatObj.name
+          'Nhiều bộ đề tổng hợp từ vựng, nghe, đọc & viết toàn cấp · Đạt ≥ 80% để pass 100% ' + curCatObj.name
         )
       ),
       h('button', {
@@ -7541,7 +7541,7 @@ function homeView(opts = {}) {
           h('button', {
             type: 'button',
             class: 'duo-guidebook-btn',
-            title: `Chọn bộ đề vượt cấp & xáo trộn câu hỏi cho Unit ${u.num} (đạt ≥ 80% để hoàn thành)`,
+            title: `Chọn bộ đề vượt cấp tổng hợp cho Unit ${u.num} (đạt ≥ 80% để hoàn thành)`,
             onclick: (e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -7589,7 +7589,7 @@ function homeView(opts = {}) {
         h('button', {
           type: 'button',
           class: 'sec-test-btn',
-          title: `Chọn bộ đề vượt cấp & xáo trộn bài học cho Section ${sec.num} (${sec.level || sec.name}) · Đạt ≥ 80% để pass cả Section`,
+          title: `Chọn bộ đề vượt cấp tổng hợp cho Section ${sec.num} (${sec.level || sec.name}) · Đạt ≥ 80% để pass cả Section`,
           onclick: (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -7723,7 +7723,7 @@ function homeView(opts = {}) {
     topicsNode,
     catExamCard,
     metaFooterCard,
-    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.22 · Tối ưu mã nguồn & xóa dead code')));
+    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.23 · Tinh chỉnh bộ đề vượt cấp tổng hợp')));
   if (_keepY != null) window.scrollTo(0, _keepY);
 }
 
@@ -14774,7 +14774,7 @@ function getCategoryExamCatalog(catObj, topics) {
       icon: '📝',
       mode: 'balanced',
       name: 'Đề số 1 · Tổng hợp cân bằng',
-      subtitle: 'Xào chẻ đồng đều Từ vựng, Nghe hiểu, Tình huống, Ngữ cảnh, Viết câu & Email'
+      subtitle: 'Kết hợp cân bằng Từ vựng, Nghe hiểu, Tình huống, Ngữ cảnh, Viết câu & Email'
     },
     {
       variantIdx: 1,
@@ -14787,7 +14787,7 @@ function getCategoryExamCatalog(catObj, topics) {
       variantIdx: 2,
       icon: '🔥',
       mode: 'audio',
-      name: 'Đề số 3 · Xào chẻ Nghe & Phản xạ',
+      name: 'Đề số 3 · Luyện Nghe & Phản xạ',
       subtitle: 'Đổi nhóm từ vựng & hội thoại khác biệt, nhấn mạnh nghe hiểu và phản xạ nhanh'
     },
     {
@@ -14795,7 +14795,7 @@ function getCategoryExamCatalog(catObj, topics) {
       icon: '🏆',
       mode: 'deep',
       name: 'Đề số 4 · Thử thách Toàn diện',
-      subtitle: 'Xào chẻ chuyên sâu vòng lặp toàn cấp với tổ hợp câu hỏi ít trùng lặp'
+      subtitle: 'Tuyển chọn chuyên sâu toàn cấp với tổ hợp câu hỏi ít trùng lặp'
     }
   ];
   const count = n >= 10 ? 4 : (n >= 4 ? 3 : 2);
@@ -15069,7 +15069,7 @@ function openCategoryExamSelector(code, catObj, topics) {
         h('span', { class: lvChipClass(catObj.level || catObj.short) }, catObj.level || catObj.short)
       ),
       h('p', { class: 'small', style: { margin: 0, lineHeight: 1.45 } },
-        'Mỗi đề tự động xào chẻ câu hỏi từ vựng, nghe hội thoại, tình huống, điền cấu trúc câu và viết từ toàn bộ ' + topics.length + ' bài học trong cấp này. Đạt ≥ 80% ở bất kỳ đề nào để pass 100%.'
+        'Mỗi đề tuyển chọn & kết hợp câu hỏi từ vựng, nghe hội thoại, tình huống, điền cấu trúc câu và viết từ toàn bộ ' + topics.length + ' bài học trong cấp này. Đạt ≥ 80% ở bất kỳ đề nào để pass 100%.'
       ),
       h('button', {
         type: 'button',
@@ -15083,11 +15083,11 @@ function openCategoryExamSelector(code, catObj, topics) {
             totalVariants: catalog.length,
             icon: '🎲',
             mode: 'balanced',
-            name: 'Đề xáo trộn ngẫu nhiên toàn cấp',
-            subtitle: 'Xào chẻ mới ngẫu nhiên trên toàn bộ bài học'
+            name: 'Đề tổng hợp ngẫu nhiên',
+            subtitle: 'Tổng hợp câu hỏi mới từ toàn bộ bài học'
           }
         })
-      }, '🎲 Thi ngay · Tạo Đề Xáo Trộn Ngẫu Nhiên')
+      }, '🎲 Thi ngay · Tạo Đề Ngẫu Nhiên')
     ),
     h('div', { class: 'acc-toolbar' },
       h('span', { class: 'small muted', style: { fontWeight: 600 } }, '📚 ' + catalog.length + ' bộ đề cố định theo chuyên đề (ít trùng lặp)'),
@@ -15112,7 +15112,7 @@ function openCategoryExamSelector(code, catObj, topics) {
         cls: 'acc-card cat-exam-acc',
         iconEl: v.icon,
         title: v.name,
-        subtitle: `${sum.count} câu xào chẻ từ ${sum.usedTopicsCount}/${topics.length} chủ đề · ${v.subtitle}`,
+        subtitle: `${sum.count} câu chọn lọc từ ${sum.usedTopicsCount}/${topics.length} chủ đề · ${v.subtitle}`,
         defaultOpen: idx === 0,
         chips: [
           rec && rec.best != null
@@ -15121,7 +15121,7 @@ function openCategoryExamSelector(code, catObj, topics) {
         ],
         body: [
           h('div', { class: 'row wrap', style: { gap: '6px' } }, ...skillChips),
-          h('p', { class: 'small muted', style: { margin: 0, fontSize: '.8rem', lineHeight: 1.4 } }, '📌 Bài học được xào chẻ: ' + previewTopics),
+          h('p', { class: 'small muted', style: { margin: 0, fontSize: '.8rem', lineHeight: 1.4 } }, '📌 Phạm vi bài học: ' + previewTopics),
           rec && rec.tries ? h('p', { class: 'small muted', style: { margin: 0, fontSize: '.78rem' } }, `Đã làm ${rec.tries} lần · Điểm cao nhất: ${rec.best}%`) : null,
           h('div', { class: 'row wrap', style: { gap: '8px', marginTop: '2px' } },
             h('button', {
@@ -15135,7 +15135,7 @@ function openCategoryExamSelector(code, catObj, topics) {
               class: 'ghost',
               style: { flex: '1 1 160px', border: '1.5px solid var(--line)' },
               onclick: () => startCategoryExam(code, catObj, topics, { directStart: true, variantMeta: v, remix: true })
-            }, '🔀 Xáo trộn & Thi')
+            }, '🔄 Đổi đề & Thi')
           )
         ]
       });
@@ -15682,7 +15682,7 @@ function lessonView(t, i, opts = null) {
             type: 'button',
             class: (!passedCatExam ? 'primary ' : '') + 'block',
             onclick: () => startCategoryExam(code, catExam.catObj, catExam.topics, { directStart: true, variantMeta: catExam.variantMeta, remix: true })
-          }, '🔀 Xáo trộn & Thi lại đề này'),
+          }, '🔄 Đổi bộ câu hỏi & Thi lại'),
           h('button', {
             type: 'button',
             class: 'accent block',
@@ -15733,10 +15733,10 @@ function lessonView(t, i, opts = null) {
         style: { gap: '8px', padding: '12px 14px', background: 'rgba(180,83,9,.08)', border: '1px solid rgba(180,83,9,.3)', borderRadius: '12px' }
       },
         h('div', { class: 'row between', style: { alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
-          h('strong', { style: { color: 'var(--amber)', fontSize: '.92rem' } }, '🚀 ' + exTitle + (catExam.remix ? ' · Đã xáo trộn' : '')),
+          h('strong', { style: { color: 'var(--amber)', fontSize: '.92rem' } }, '🚀 ' + exTitle + (catExam.remix ? ' · Đề mới' : '')),
           h('span', { class: 'chip', style: { fontSize: '.72rem', fontWeight: 700 } }, sum.usedTopicsCount + '/' + catExam.topics.length + ' chủ đề')
         ),
-        h('p', { class: 'small', style: { margin: 0 } }, 'Xào chẻ câu hỏi tổng hợp Từ vựng, Nghe hiểu, Tình huống, Ngữ cảnh & Viết trong ' + catExam.catObj.name + '. Đạt từ 80% trở lên sẽ pass 100% cấp này.'),
+        h('p', { class: 'small', style: { margin: 0 } }, 'Tổng hợp câu hỏi Từ vựng, Nghe hiểu, Tình huống, Ngữ cảnh & Viết chọn lọc trong ' + catExam.catObj.name + '. Đạt từ 80% trở lên sẽ pass 100% cấp này.'),
         h('div', { class: 'row wrap', style: { gap: '6px' } }, ...chips)
       );
     })(),
@@ -15795,7 +15795,7 @@ function lessonView(t, i, opts = null) {
         class: 'accent block',
         style: { fontWeight: 700, padding: '11px 14px' },
         onclick: () => startCategoryExam(code, catExam.catObj, catExam.topics, { directStart: true, variantMeta: catExam.variantMeta, remix: true })
-      }, '🔀 Xáo trộn lại đề & xào chẻ câu mới'),
+      }, '🔄 Đổi bộ câu hỏi khác'),
       catExam && h('button', {
         type: 'button',
         class: 'ghost block',

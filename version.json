@@ -1,5 +1,5 @@
 {
-  "version": "4.22",
-  "build": "20261127-0540",
-  "message": "Xóa dead code (mã CJK, Kanji, bộ chọn ngôn ngữ cũ và các nhánh không dùng tới) giúp app nhẹ và mượt hơn"
+  "version": "4.23",
+  "build": "20261127-0755",
+  "message": "Tinh chỉnh câu chữ tự nhiên hơn cho bộ đề tổng hợp & đề ngẫu nhiên vượt cấp"
 }
