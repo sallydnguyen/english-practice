@@ -1,5 +1,5 @@
 {
-  "version": "4.15",
-  "build": "20261126-0945",
-  "message": "Thêm nút TEST học vượt cấp cho từng Section (A1–C2) và từng Unit"
+  "version": "4.16",
+  "build": "20261126-1030",
+  "message": "Loại bỏ dead code CJK/chưa dùng và lazy-render Home để app mượt hơn"
 }
