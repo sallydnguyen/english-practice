@@ -1370,7 +1370,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/en.json và data/ielts_30day_listening.js,
    âm thanh thu sẵn nằm trong audio/ (audio/w*.json, audio/mail/, audio/listen/, audio/ielts/).
    ===================================================================== */
-const APP_BUILD_ID = '20261127-2030';
+const APP_BUILD_ID = '20261127-2130';
 const LANGS = {
   en: { label: 'English', vi: 'Tiếng Anh', short: 'Anh', folder: '', tts: 'en-US', rec: 'en-US', lang: 'en', cjk: false },
 };
@@ -7944,7 +7944,7 @@ function homeView(opts = {}) {
     topicsNode,
     catExamCard,
     metaFooterCard,
-    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.27 · Hoàn thiện dịch đa ngôn ngữ UI')));
+    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.28 · Hoàn thiện dịch đa ngôn ngữ UI')));
   if (_keepY != null) window.scrollTo(0, _keepY);
 }
 
@@ -19102,7 +19102,7 @@ function showSyncModal() {
         inp,
         connBtn,
         h('a', {
-          href: 'https://github.com/settings/tokens/new?description=English%20Practice%20Sync&scopes=gist',
+          href: 'https://github.com/settings/tokens/new?description=Lingogo%20English%20Sync&scopes=gist',
           target: '_blank',
           rel: 'noopener noreferrer',
           class: 'small',
@@ -19318,7 +19318,7 @@ function showFeedbackModal(customCtx) {
     style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' },
     onclick: () => {
       const tagObj = TAGS.find(t => t.id === selectedTag) || TAGS[0];
-      const title = `[Báo lỗi] ${tagObj.label.replace(/^.+?\s/, '')} - ${locText.split('·')[0].trim()}`;
+      const title = `[Báo lỗi Lingogo English] ${tagObj.label.replace(/^.+?\s/, '')} - ${locText.split('·')[0].trim()}`;
       const body = buildReportText();
       const issueUrl = `https://github.com/sallydnguyen/lingogo-english/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
       window.open(issueUrl, '_blank');
@@ -19335,7 +19335,7 @@ function showFeedbackModal(customCtx) {
       autoGhBtn.textContent = uiTr('Đang gửi lên GitHub...');
       try {
         const tagObj = TAGS.find(t => t.id === selectedTag) || TAGS[0];
-        const title = `[Báo lỗi] ${tagObj.label.replace(/^.+?\s/, '')} - ${locText.split('·')[0].trim()}`;
+        const title = `[Báo lỗi Lingogo English] ${tagObj.label.replace(/^.+?\s/, '')} - ${locText.split('·')[0].trim()}`;
         const body = buildReportText();
         const res = await fetch('https://api.github.com/repos/sallydnguyen/lingogo-english/issues', {
           method: 'POST',

@@ -533,13 +533,13 @@ def main() -> None:
     html = replace_exact(
         html,
         "https://github.com/sallydnguyen/lingogo/issues/new",
-        "https://github.com/sallydnguyen/english-practice/issues/new",
+        "https://github.com/sallydnguyen/lingogo-english/issues/new",
         label="github issue url",
     )
     html = replace_exact(
         html,
         "https://api.github.com/repos/sallydnguyen/lingogo/issues",
-        "https://api.github.com/repos/sallydnguyen/english-practice/issues",
+        "https://api.github.com/repos/sallydnguyen/lingogo-english/issues",
         label="github issue api url",
     )
     html = replace_exact(
