@@ -1,4 +1,4 @@
-const CACHE_NAME = 'english-practice-offline-v31';
+const CACHE_NAME = 'english-practice-offline-v32';
 const CORE_ASSETS = [
   './',
   './index.html',
