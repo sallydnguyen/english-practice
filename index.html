@@ -25,7 +25,7 @@
   applyTheme();
   (function () {
     try {
-      var u = localStorage.getItem('lingogo-ui-lang') || 'vi';
+      var u = localStorage.getItem('lingogo-ui-lang-en') || 'vi';
       var map = { vi: 'vi', en: 'en', zh: 'zh-Hans', ja: 'ja' };
       if (!map[u]) u = 'vi';
       document.documentElement.dataset.uiLang = u;
@@ -1370,7 +1370,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/en.json và data/ielts_30day_listening.js,
    âm thanh thu sẵn nằm trong audio/ (audio/w*.json, audio/mail/, audio/listen/, audio/ielts/).
    ===================================================================== */
-const APP_BUILD_ID = '20261127-2020';
+const APP_BUILD_ID = '20261127-2030';
 const LANGS = {
   en: { label: 'English', vi: 'Tiếng Anh', short: 'Anh', folder: '', tts: 'en-US', rec: 'en-US', lang: 'en', cjk: false },
 };
@@ -3087,7 +3087,7 @@ const dueIn = (code, d = todayN()) => {
 // ===== Tiện ích giao diện =====
 
 // ===== ĐA NGÔN NGỮ GIAO DIỆN (VI / EN / ZH / JA) =====
-const UI_LANG_KEY = 'lingogo-ui-lang';
+const UI_LANG_KEY = 'lingogo-ui-lang-en';
 const UI_LANGS = {
   vi: { flag: '🇻🇳', short: 'VI', name: 'Tiếng Việt', html: 'vi' },
   en: { flag: '🇬🇧', short: 'EN', name: 'English', html: 'en' },
@@ -7944,7 +7944,7 @@ function homeView(opts = {}) {
     topicsNode,
     catExamCard,
     metaFooterCard,
-    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.26 · Hoàn thiện dịch đa ngôn ngữ UI')));
+    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.27 · Hoàn thiện dịch đa ngôn ngữ UI')));
   if (_keepY != null) window.scrollTo(0, _keepY);
 }
 
