@@ -1,5 +1,5 @@
 {
-  "version": "4.23",
-  "build": "20261127-0755",
-  "message": "Tinh chỉnh câu chữ tự nhiên hơn cho bộ đề tổng hợp & đề ngẫu nhiên vượt cấp"
+  "version": "4.24",
+  "build": "20261127-1655",
+  "message": "Thêm nút chọn ngôn ngữ hiển thị (Tiếng Việt / English / 中文 / 日本語) ở đầu trang và mục Tiến độ"
 }
