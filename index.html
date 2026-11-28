@@ -1370,7 +1370,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/en.json và data/ielts_30day_listening.js,
    âm thanh thu sẵn nằm trong audio/ (audio/w*.json, audio/mail/, audio/listen/, audio/ielts/).
    ===================================================================== */
-const APP_BUILD_ID = '20261127-2130';
+const APP_BUILD_ID = '20261127-2220';
 const LANGS = {
   en: { label: 'English', vi: 'Tiếng Anh', short: 'Anh', folder: '', tts: 'en-US', rec: 'en-US', lang: 'en', cjk: false },
 };
@@ -7944,7 +7944,7 @@ function homeView(opts = {}) {
     topicsNode,
     catExamCard,
     metaFooterCard,
-    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.28 · Hoàn thiện dịch đa ngôn ngữ UI')));
+    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo English v4.29 · Nâng âm lượng Listen Dialogue & nút loa câu ví dụ')));
   if (_keepY != null) window.scrollTo(0, _keepY);
 }
 
@@ -13932,7 +13932,7 @@ function quizFeedback(code, ex, r) {
 }
 function resolveTrackAudioSrc(code, track) {
   if (!track || !track.audio) return null;
-  if (track.audio.startsWith('audio/')) return langPath(code, track.audio);
+  if (track.audio.startsWith('audio/')) return langPath(code, track.audio) + '?v=' + encodeURIComponent(APP_BUILD_ID);
   return track.audio;
 }
 function renderListenTranscriptBox(code, track, initiallyVisible = false) {
@@ -13990,6 +13990,7 @@ function buildListenDialoguePanel(code, track, opts = {}) {
     src: audioSrc || '',
     style: { width: '100%', height: '38px', marginTop: '4px' }
   });
+  audioPlayer.volume = 1.0;
 
   const playFallback = () => { if (fallbackText) say(code, fallbackText, rate < 0.95); };
   const playBtn = h('button', {
@@ -14007,6 +14008,7 @@ function buildListenDialoguePanel(code, track, opts = {}) {
       }
       stopSay();
       ACTIVE_DLG_AUDIO = audioPlayer;
+      audioPlayer.volume = 1.0;
       audioPlayer.playbackRate = rate;
       if (typeof audioPlayer.play === 'function') {
         const p = audioPlayer.play();
@@ -15731,14 +15733,24 @@ function lessonView(t, i, opts = null) {
         ex.type === 'quiz' ? quizFeedback(code, ex, r) : null,
         ex.type === 'listen_dlg' ? listenDlgFeedback(code, ex, r) : null,
         ex.type === 'gquiz' ? grammarQuizFeedback(code, ex, r) : null,
-        (['listen', 'reverse'].includes(ex.type) || (!r.correct && ex.type === 'meaning')) && ex.v ? h('div', { class: 'stack', style: { gap: '4px', marginTop: '4px' } },
-          ex.v.m ? h('p', { lang: LANGS[code].lang, style: { margin: 0, fontWeight: 600 } }, plain(ex.v.w) + ' — ' + ex.v.m) : null,
-          (ex.v.r && ex.v.r !== plain(ex.v.w)) ? h('p', { class: 'ipa', style: { margin: 0, color: 'var(--teal)', fontWeight: 600, textAlign: 'left' } }, ex.v.r) : null,
-          ex.v.ex ? h('p', { class: 'small', style: { margin: '2px 0 0 0' } },
-            h('span', { lang: LANGS[code].lang }, plain(ex.v.ex)),
-            ex.v.exm ? h('span', { class: 'muted' }, ' — ' + ex.v.exm) : null
-          ) : null,
-          h('div', { class: 'listen', style: { justifyContent: 'flex-start' } }, listenBtns(code, ex.v.w))
+        (['listen', 'reverse', 'meaning'].includes(ex.type)) && ex.v ? h('div', { class: 'stack', style: { gap: '4px', marginTop: '4px' } },
+          h('div', { class: 'row between', style: { alignItems: 'center', gap: '8px' } },
+            h('div', { class: 'stack', style: { gap: '2px', flex: 1, minWidth: 0 } },
+              ex.v.m ? h('p', { lang: LANGS[code].lang, style: { margin: 0, fontWeight: 600 } }, plain(ex.v.w) + ' — ' + ex.v.m) : null,
+              (ex.v.r && ex.v.r !== plain(ex.v.w)) ? h('p', { class: 'ipa', style: { margin: 0, color: 'var(--teal)', fontWeight: 600, textAlign: 'left' } }, ex.v.r) : null
+            ),
+            listenBtns(code, ex.v.w)
+          ),
+          ex.v.ex ? h('div', { class: 'row between', style: { alignItems: 'center', gap: '8px', marginTop: '2px' } },
+            h('div', { class: 'stack', style: { gap: '2px', flex: 1, minWidth: 0 } },
+              h('p', { class: 'small', style: { margin: 0 } },
+                h('span', { lang: LANGS[code].lang }, plain(ex.v.ex)),
+                ex.v.exm ? h('span', { class: 'muted' }, ' — ' + ex.v.exm) : null
+              ),
+              ex.v.exr ? h('p', { class: 'ipa', style: { margin: 0, fontSize: '.82rem', color: 'var(--teal)', textAlign: 'left' } }, ex.v.exr) : null
+            ),
+            listenBtns(code, ex.v.ex)
+          ) : null
         ) : null,
         catExam && ex.topic ? h('p', { class: 'small muted', style: { margin: '6px 0 0 0', fontSize: '.76rem' } }, '📌 Nguồn bài học: ' + (ex.topic.sub || ex.topic.title)) : null
       ),
